@@ -1,0 +1,191 @@
+Gérer les droits, y compris les accès à telle ou telle page = l'Autorisation
+Dès que l'utilisateur va envoyer une requête -> l'appli va vérifier des conditions pour autoriser l'accès
+Cela se fait par le mécanisme des Voters
+
+Voters = petits services qui répondent aux demande d'accès de sécurité, c'est à dire à des questions de sécurité, pour savoir si l'utilisateur à le droit de faire une action
+
+A chaque fois qu'on voudra vérifier un accès, on le fera par le biais d'une méthode isGranted. C'est elle qui fait ensuite appel aux Voters.
+
+Cela se fait de la sorte:
+
+	1. On poste une question (comme "L'User peut il acceder à cette page?")
+	2. La méthode isGranted appelle tous les Voters enregistrés dans l'appli et leur demande.
+	3. Chaque Voter va soit s'abstenir, soit donner/refuser l'accès.
+
+Voici un pseudoco-code exemple:
+
+if isGranted( <Question d'accès>, <Entité> )
+	// Code exécuté qu'avec certains accès ...
+
+La méthode isGranted = est appellée differement, et possède même des variantes, employées selon le contexte. Quelques exemples:
+
+Dans un contrôleur:
+	- la méthode $this->isGranted([...]), renvoie true ou false
+	- la méthode $this->denyAccessUnlessGranted([...]), lance une exception si l'utilisateur n'a pas le droit
+	- l'attribut #[IsGranted([...])], sur la méthode du contrôleur, ou même sur la classe du contrôleur entier, lance une exception si l'utilisateur n'a pas le droit
+
+Dans une autre classe:
+	- dans __construct, injecter un objet Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface $checker
+	ensuite, appeller $this->checker->isGranted([...])
+	- Symfony\Bundle\SecurityBundle\Security $security et appeller
+	$this->security->isGranted([...])
+	Il permet aussi de récup l'utilisateur actuellement connecté avec $securit->getUser()
+
+Dans un template:
+	- La fonction is_granted([...]), renvoie true ou false
+
+isGranted permet de:
+	- vérifier si un utilisater est connecté
+	- vérifier si il possède un rôle spécifique
+
+On peut donner à isGranted 5 chaînes de caractères pour vérifier si un utilisateur est connecté:
+	- 'IS_AUTHENTICATED' signifie de ne laisser passer que si l'utilisateur est connecté
+	- 'IS_AUTHENTICATED_REMEMBERED' est similaire à IS_AUTHENTICATED
+	- 'IS_AUTHENTICATED_FULLY' ne laisse passer que les utilisateurs qui se sont connectés activement au cours de cette session
+	- 'IS_REMEMBERED' ne laisse passer que les utilisateurs connectés depuis une session de cookie "remember me"
+	- 'PUBLIC_ACCESS' ne met aucune restriction
+
+Exemple, si je veut donner accès à une route de mon contrôleur qu'aux utilisateurs connectés:
+
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+
+// ...
+class MonContrôleur
+{
+
+	// ...
+	#[IsGranted('IS_AUTHENTICATED')]
+	#[Route([...])]
+	public function index()
+	{
+		// ...
+	}
+
+}
+
+Pour demander un rôle, je passe dans isGranted une chaîne de caractère ROLE_<nom du role>. Exemple, pour n'accepter que des admins:
+
+// ...
+class MonContrôleur
+{
+
+	// ...
+	#[IsGranted('ROLE_ADMIN')]
+	#[Route([...])]
+	public function index()
+	{
+		// ...
+	}
+
+}
+
+Ou encore:
+
+// ...
+class MonContrôleur
+{
+
+	// ...
+	#[Route([...])]
+	public function index()
+	{
+		$this->denyAccessUnlessGranted('ROLE_ADMIN');
+		// ...
+	}
+
+}
+
+==
+
+-- Hierarchiser les rôles --
+
+On peut définir une hierarchie des rôles, c'est à dire faire de sorte à ce que certains rôles héritent d'autres
+rôles, y compris de leurs droits d'accès.
+On va dans:
+	config/packages/security.yaml
+
+On ajoute une nouvelle section, nommée "role_hierarchy", par ex. en dessous de la section "password_hashers".
+
+security:
+# …
+    role_hierarchy:
+        ROLE_USER: ~
+        ROLE_MODERATEUR: ROLE_USER
+        ROLE_AJOUT_DE_LIVRE: ROLE_USER
+        ROLE_EDITION_DE_LIVRE: ROLE_AJOUT_DE_LIVRE
+        ROLE_ADMIN: [ROLE_MODERATEUR, ROLE_EDITION_DE_LIVRE]
+
+Ici, ~ signifie que 'ROLE_USER' n'hérite de rien. 
+ROLE_MODERATEUR hérite des droits de ROLE_USER, ROLE_ADMIN de ROLE_MODERATEUR et ROLE_EDITION_DE_LIVRE, ainsi de suite.
+
+Les Voters ainsi que la méthode isGranted prend la configuration en compte.
+
+==
+
+-- Les Voters personnalisés "Custom" ==
+
+Je peux personnaliser la sécurité encore plus en créant mes propres Voters.
+
+Exemple: J'ai une entité, Maison. Je souhaite, par le biais de isGranted, n'autoriser l'accès à l'utilisateur que si il est le propriétaire de la maison.
+Je ne peux pas faire:
+	isGranted('house.is_owner', $house);
+	Ou encore, $this->denyAccessUnlessGranted('house.is_owner', $house);
+Car Symfony ne connait pas ça par défaut. Je dois donc créer un Voter, qui va ensuite comprendre 'house.is_owner'.
+
+Pour créer un Voter, une seule chose obligatoire: implémenter l'interface:
+	Symfony\Component\Security\Core\Authorization\Voter\VoterInterface
+
+On peut aussi étendre la classe abstraite:
+	Symfony\Component\Security\Core\Authorization\Voter\Voter
+Qui elle même hérite de l'interface. C'est plus simple. Cette classe nous offres deux méthodes à obligatoirement
+implémenter:
+
+	- supports(string $attribute, mixed $subject): bool - Elle reçoit le premier attribut passé à isGranted, et le second optionel, et renvoie true si le Voter peut répondre
+	(en refusant ou acceptant), false si le Voter s'abstient.
+
+	- voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool - Elle reçoit aussi l'attribut, le sujet optionel, et l'objet TokenInterface qui contient
+	l'utilisateur. Elle renvoie true pour autoriser l'accès, false pour le refus.
+
+Ces deux méthodes = abstraites, doit obligatoirement les implémenter.
+
+Je vais dans le dossier src/Security/Voter, j'y crée mon fichier php HomeOwnerVoter, j'y implémente la classe avec ces deux méthodes.
+
+//...
+class HomeOwnerVoter extends Voter
+{
+
+	protected function supports(string $attribute, mixed $subject): bool
+	{
+		return 'home.is_owner' == $attribute && $subject instanceof Home;
+	}
+
+	protected function voteOnAttribute(string $attribute, mixed $subject, TokeInterface $token)
+	{
+		$user = $token->getUser();
+		if (!$user instanceof User){
+			return false;
+		}
+
+		return $user == $subject->getOwner();
+	}
+
+}
+
+==
+
+-- Sécurisation des routes par la configuration --
+
+En plus de tout ça, il est possible aussi de restreindre l'accès aux routes via la config.
+On ouvre config/packages/security.yaml, on regarde en dessous des firewalls:
+
+security:
+# …
+    # Easy way to control access for large sections of your site
+    # Note: Only the *first* access control that matches will be used
+    access_control:
+    # - { path: ^/admin, roles: ROLE_ADMIN }
+    # - { path: ^/profile, roles: ROLE_USER }
+
+On décommente # - { path: ^/admin, roles: ROLE_ADMIN }.
+Cette ligne signifie que le role administrateur est nécessaire pour l'accès à toute URL commençant par /admin. En effet, path spécifie une expression régulière.
+On peut aussi config l'accès par d'autres règles comme l'ip, le host, etc... voir https://symfony.com/doc/current/security/access_control.html
