@@ -1,0 +1,176 @@
+Pour que Symfony ait accès à la DB, je configure le DSN sur le .env
+Je peux aussi le faire sur le .env.local qui est ignoré par Git, et qui va surcharger les valeurs de .env
+Les variables d'environement déjà mises en place sur l'ordinateur surchargent celles des fichiers .env (y compris .env.local, etc...)
+
+Exemple de DSN configuré sur un fichier .env:
+
+DATABASE_URL="postgresql://<utilisateur>:<mot_de_passe>@<IP>:<port>/<nom de la DB>?serverVersion=<version>&charset=utf8"
+
+Une fois que c'est fait, jeste la connexion à la SGBG en tenant de créer la DB si elle n'existe pas:
+
+	symfony console doctrine:database:create -–if-not-exists
+
+Je génère sur mon code des entités avec les repository associés avec:
+
+	symfony make:entity
+
+J'applique ensuite ces entités à la base de donnée avec:
+
+	symfony console make:migration
+	symfony consoler doctrine:migrations:migrate
+
+==
+
+L'EntityManagerInterface peut être employé pour altérer la DB par le biais d'instance d'entités.
+Son chemin: Doctrine\ORM\EntityManagerInterface
+
+== Ajouter un objet:
+
+$entity = new Entity();
+entity->propriété = ...;
+
+$entityManagerInterface->persist($entity);
+$entityManagerInterface->flush();
+
+== Modifier un objet:
+
+$entity = repo->find...
+
+$entity->propriétéAModifier = ...
+
+$entityManagerInterface->flush();
+
+== Supprimer un objet:
+
+$entityManagerInterface->remove($entity);
+$entityManagerInterface->flush();
+
+==
+
+Les repository:
+
+Liste des méthodes d'un repository:
+
+find  : donnez un id, recevez l’entité correspondante.
+
+findOneBy  : cette méthode prend en argument un tableau de critères pour effectuer une requête  WHERE. Par exemple  findOneBy([‘title’ => ‘1984’])  .
+
+findAll  : cette méthode renvoie l’intégralité des entités d’un certain type. 
+	Il est fortement déconseillé de s’en servir, sauf pour des tables de référence contenant un nombre très limité de lignes.
+
+findBy  : cette méthode extrêmement polyvalente prend en paramètre le même tableau de critères que  findOneBy, 
+	un second tableau optionnel construit de la même manière pour ajouter une clause  ORDER BY, 
+	un paramètre optionnel  LIMIT, et un paramètre optionnel  OFFSET  
+
+On a aussi la méthode de comptage: 
+	count(array $criteria): int
+
+Récupérer les 6 dernières entités:
+
+$bookRepository->findBy([], [‘id’ => ‘DESC’], 6);
+
+La méthode findBy est de telle sorte: findBy( <Clause WHERE>, <Clause optionelle ORDER BY>, <Valeur optionelle LIMIT>, <Valeur optionelle OFFSET> );
+
+==
+
+Le QueryBuilder de Doctrine est un objet permettant de générer des requêtes personnalisés pour des méthodes personnalisés au sein
+de nos classes Repository.
+
+On le recupère dans ces classes avec:
+	$this->createQueryBuilder( <alias de l'entité> );
+Par convention, on met comme alias de l'entité la première lettre de son nom. On nome aussi par convention l'objet QueryBuilder $qb.
+
+<?php
+// …
+public function findByDateOfBirth(array $dates = []): array
+{
+    $qb = $this->createQueryBuilder('a');
+    // …
+
+// …
+
+Dans cette fonction custom, on prend un array qui va accepter deux valeurs optionelles: "start", et "end", deux dates qui vont correspondre à un filtre
+de début et de fin.
+
+Au QueryBuilder on peut appeller plusieurs méthodes pour le constuire, dont andWhere pour ajouter une clause Where.
+
+Exemple:
+
+<?php
+public function findByDateOfBirth(array $dates = []): array
+{
+    $qb = $this->createQueryBuilder('a')
+            ->andWhere('a.dateOfBirth >= :start')
+            ->setParameter('start', new \DateTimeImmutable($dates['start']));
+    // …
+
+setParameter et le fait de préfixer un nom du caractère : ne sert qu'à utiliser des placeholders.
+
+Ensuite on peut demander de générer la requête et renvoyer le résultat avec:
+	$qb->getQuery()->getResult();
+
+Exemple:
+
+<?php
+public function findByDateOfBirth(array $dates = []): array
+{
+    $qb = $this->createQueryBuilder('a')
+            ->andWhere('a.dateOfBirth >= :start')
+            ->setParameter('start', new \DateTimeImmutable($dates['start']));
+            
+    return $qb->getQuery()->getResult();
+}
+
+On modifie finalement la fonction pour intégrer le fait que start et end soit optionnels:
+
+<?php
+public function findByDateOfBirth(array $dates = []): array
+{
+    $qb = $this->createQueryBuilder('a');
+    
+    if (\array_key_exists('start', $dates)) {
+        $qb->andWhere('a.dateOfBirth >= :start')
+            ->setParameter('start', new \DateTimeImmutable($dates['start']));
+    }
+    
+    if (\array_key_exists('end', $dates)) {
+        $qb->andWhere('a.dateOfBirth <= :end')
+            ->setParameter('end', new \DateTimeImmutable($dates['end']));
+    }
+    
+    return $qb->orderBy('a.dateOfBirth', 'DESC')
+            ->getQuery()
+            ->getResult();
+}
+
+==
+
+Nous allons prendre en exemple une méthode de contrôleur qui va gérer à la fois une page de formulaire pour ajouter une entité,
+à la fois une page de formulaire pour en modifier une d'existante.
+On peut combiner plusieurs Routes sur un seul contrôleur:
+
+<?php
+#[Route('/new', name: 'app_admin_author_new', methods: ['GET', 'POST'])]
+#[Route('/{id}/edit', name: 'app_admin_author_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
+public function new(?Author $author, Request $request, EntityManagerInterface $manager): Response
+// ...
+
+On est soit sur /new pour créer une nouvelle entité, soit sur /{id}/edit. Et on précise avec 'requirements' que l'id n'est que chiffres.
+Dans la valeur nullable ?Author $author, on obtient automatiquement l'entité si l'id est présent.
+
+On modifie la fonction avec un opérateur de fusion null ??= pour le prendre en compte:
+
+<?php
+public function new(?Author $author, Request $request, EntityManagerInterface $manager): Response
+{
+    $author ??= new Author();
+    // …
+
+Cela signifie que si l'auteur est non-nul, on le laisse tel qu'il est. Autrement on en instancie un.
+C'est à dire que quand on passe par le lien pour créer un nouvel auteur, il est instancié.
+Quand on passe par le lien spécifiant un id, il est récupéré.
+
+On peut dynamiquement modifier le titre à afficher du formulaire dont il est question selon qu'on ajoute une entité ou qu'on
+en modifie une d'existante.
+Avec Twig, on a sur toutes nos templates accès à une variable "app".
+Dans "app.current_route", on récupère le nom de la route actuelle et on affiche selon les conditions.

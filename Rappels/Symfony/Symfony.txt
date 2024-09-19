@@ -1,0 +1,52 @@
+Création projet:
+	symfony new <nom du projet> --webapp
+
+Serveur local:
+	symfony serve -d
+
+Eteint serveur local:
+	symfony local:server:stop
+
+Vider le cache:
+	symfony console cache:clear
+
+Tester la connexion au SGBD en tentant la création de la DB si elle n'existe pas:
+	symfony console doctrine:database:create --if-not-exists
+
+Génération entité:
+	symfony make:entity
+
+Génération contrôleur:
+	symfony console make:controller <nom>
+
+Génération DB selon les entités:
+	symfony console make:migration
+	symfony consoler doctrine:migrations:migrate
+
+Créer un FormType:
+	symfony console make:form
+Exemple: j'utilise cette commande, pour faire un objet formulaire représentant l'entrée des données d'un livre, de la classe entité Book, je lui spécifie BookType comme
+nom de classe de l'objet formulaire (on met Type à la fin, par convention)
+Si la classe entité Book est prête, je peut spécifier directement comme ça:
+	symfony console make:form BookType Book
+
+==
+
+
+Types de composantes Symfony: Les Components, les Polyfills, les Contracts
+Autrement, il y a aussi :
+	- les Bridges (couche de compatibilité avec librairie externe à Symfony & composantes de Symfony);
+	- et les Bundles (regroupements logiques de composants ayant une config & intégration communes, par exemple SecurityBundle)
+
+==
+
+Méthodes de l'objet Request:
+
+// les trois propriétés suivantes sont des objets qui contiennent tous une méthode all() qui renvoie tout leur contenu et une méthode get($key) pour récupérer une valeur
+$request->query; // données envoyées dans l’URL, contenu de $_GET
+$request->query->get(‘param’); // renverra la valeur “foo” passée dans le paramètre d’URL “param”, par exemple avec “www.monsite.com/une-route?param=foo”
+$request->request; // données envoyées dans $_POST
+$request->attributes; // données ajoutées par Symfony
+$request->getMethod(); // renvoie la méthode HTTP de la requête
+$request->getPathInfo(); // renvoie la ressource demandée
+$request->getContent(); // renvoie le contenu brut de la requête

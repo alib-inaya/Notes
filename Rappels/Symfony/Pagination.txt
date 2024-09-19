@@ -1,0 +1,82 @@
+On va utiliser la librairie Pagerfanta pour implémenter sous Symfony la pagination.
+
+On ajoute les dépendances:
+	symfony composer require babdev/pagerfanta-bundle pangerfanta/doctrine-orm-adapter pagerfanta/twig
+
+Ensuite, j'adapte les méthodes de repository en question.
+Je les modifie de telle sorte à ne plus retourner directement leurs résultats, mais plutôt l'objet QueryBuilder:
+
+Je transforme donc:
+
+<?php
+public function findByDateOfBirth(array $dates = []): array
+{
+    $qb = $this->createQueryBuilder('a');
+    
+    if (\array_key_exists('start', $dates)) {
+        $qb->andWhere('a.dateOfBirth >= :start')
+            ->setParameter('start', new \DateTimeImmutable($dates['start']));
+    }
+    
+    if (\array_key_exists('end', $dates)) {
+        $qb->andWhere('a.dateOfBirth <= :end')
+            ->setParameter('end', new \DateTimeImmutable($dates['end']));
+    }
+    
+    return $qb->orderBy('a.dateOfBirth', 'DESC')
+            ->getQuery()
+            ->getResult();
+}
+
+En:
+
+<?php
+public function findByDateOfBirth(array $dates = []): QueryBuilder
+{
+    $qb = $this->createQueryBuilder('a');
+    
+    if (\array_key_exists('start', $dates)) {
+        $qb->andWhere('a.dateOfBirth >= :start')
+            ->setParameter('start', new \DateTimeImmutable($dates['start']));
+    }
+    
+    if (\array_key_exists('end', $dates)) {
+        $qb->andWhere('a.dateOfBirth <= :end')
+            ->setParameter('end', new \DateTimeImmutable($dates['end']));
+    }
+    
+    return $qb;
+}
+
+Ensuite, au niveau de mon contrôleur, j'obtiens mes entités de la sorte:
+
+$entities = Pagerfanta::createForCurrentPageWithMaxPerPage(
+	new QueryAdapter( $repository->findByDateOfBirth([]) ),
+	$request->query->get('page', 1),
+	10
+);
+
+Cette fonction suit la signature:
+
+$entities = Pagerfanta::createForCurrentPageWithMaxPerPage(
+	new QueryAdapter( <Mon objet QueryBuilder> ),
+	<La page à obtenir>,
+	<La quantité maximale d'entités par page>
+);
+
+Sur une template Twig, je peut ensuite faire une itération sur l'objet
+$entities comme si c'était un array de résultats brut.
+
+Sur ma template Twig, je vais pouvoir générer la vue pour l'affichage de la pagination avec:
+	pagerfanta( entities );
+
+Entities étant l'objet $entities.
+
+Si je veux styler l'interface de pagination avec Bootstrap et que j'ai Bootstrap sur mon projet,
+je peux aller sur config/packages, créer un nouveau fichier "babdev_pagerfanta.yaml" et y mettre:
+
+babdev_pagerfanta:
+    default_view: twig
+    default_twig_template: '@BabDevPagerfanta/twitter_bootstrap5.html.twig'
+
+

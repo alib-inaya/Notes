@@ -1,0 +1,60 @@
+
+Exemple de contrôleur avec routage et DTOs:
+
+<?php
+
+namespace App\Controller;
+
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+
+use \App\Repository\PersonRepository;
+use \App\Service\PersonService;
+use \App\DTO\PersonDTO;
+
+class MainController extends AbstractController
+{
+    #[Route('/main', name: 'app_main')]
+    public function index(PersonService $personService): Response
+    {
+        return $this->render('main/index.html.twig', [
+            'controller_name' => 'MainController',
+            'persons' => $personService->getAllPersons()
+        ]);
+    }
+
+    #[Route('/main/add', name: 'app_main_add', methods: ['POST'])]
+    public function addPerson(PersonService $personService, #[MapRequestPayload] PersonDTO $dto)
+    {
+        $personService->addPerson($dto->firstName, $dto->lastName, $dto->age);
+    }
+}
+
+Le DTO:
+
+<?php
+
+namespace App\DTO;
+
+use Symfony\Component\Validator\Constraints as Assert;
+
+class PersonDTO
+{
+    public function __construct(
+        #[Assert\NotBlank]
+        #[Assert\Length(min: 3, max: 30)]
+        public readonly string $firstName,
+
+        #[Assert\NotBlank]
+        #[Assert\Length(min: 3, max: 30)]
+        public readonly string $lastName,
+
+        #[Assert\NotNull]
+        public readonly int $age
+    )
+    {
+    }
+}
+

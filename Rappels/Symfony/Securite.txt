@@ -1,0 +1,142 @@
+"Qui est tu ?" = L'authentification (Authentication en anglais)
+"Quels droits as-tu ?" = L'autorisation (Authorization en anglais)
+
+En général, quand l'authentification échoue, on renvoie 401 Unauthorized.
+Quand l'autorisation échoue, c'est 403 Forbidden.
+Symfony va se charger de ça pour nous.
+
+Notre classe d'utilisateur, pour fonctionner avec le système de sécurité de Symfony, doit implémenter l'interface:
+	Symfony\Component\Security\Core\User\UserInterface
+
+Elle définit les méthodes obligatoires utilisées par le système de sécurité. Elle ne gère pas les mots de passes,
+car pas toutes les applications se basent sur les mots de passes pour gérer leur sécurité.
+
+Puisque sur notre appli, on fait usage des mots de passe, on va également devoir implémenter:
+	Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface
+
+Les méthodes de UserInterface:
+	- getUserIdentifier: retourne la chaîne de caractères qui identifier notre utilisateur quand il se connecte (le login). Peut être l'username, l'email, ...
+				C'est ce que l'utilisateur doit entrer dans un formulaire de connexion.
+	- getRoles: retourne un array de chaînes de caractères représentant les roles de l'utilisateur. Peut aider à déterminer ses droits.
+	- eraseCredentials: fonction dont on peut se servir pour éviter de garder en mémoire le mdp de l'utilisateur avant hachage (Pas obligatoire).
+
+Le plus simple & classique: sauvegarder les Utilisateurs sur une base de donnée via une entité.
+On va créer l'entité qui va implémenter les interfaces nécessaires. MakerBundle offre une commande dédiée:
+	symfony console make:user
+On génère ensuite une migration:
+	symfony console make:migration
+On l'applique à la base de donnée:
+	symfony console doctrine:migration:migrate
+
+Je peux aller dans config/packages/security.yaml et y jeter un oeil:
+
+security:
+# …
+    providers:
+    # used to reload user from session & other features (e.g. switch_user)
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: username
+            # …
+
+Il configure des "providers". Un provider = quelquechose qui fournit une authentification. Ici, on précise qu'elle se fait via des entités, User, par la propriété username.
+Les providers fournissent un moyen d'attester l'existence d'un compte authentifié au sein du système de sécurité.
+
+Authentification = en deux temps:
+	- Récupérer la clé d'authentification (comme un username) envoyé par la requête & vérifier qu'un utilisateur avec cet identifiant existe dans mes sources de données.
+		C'est ce que fait le UserProvider
+	- Si il existe, vérifier que le mot de passe correspond avec celui envoyé par la requête. C'est ce que fait l'Authenticator
+
+Dans Symfony, ces deux étapes sont gérées par le firewall, qui va donc appeller l'UserProvider puis l'Authenticator.
+
+On peut voir les firewalls configurés dans le fichier de configuration security.yaml, juste après providers:
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            lazy: true
+            provider: app_user_provider
+
+Il y a donc deux firewalls, dev et main.
+Les URLs concernées par le firewall sont spécifiée par pattern. 
+
+dev s'applique à toute URL qui commence par _profiler/, /_wdt/, /css/, /images/ ou /js/.
+Symfony applique une politique de premier arrivé, premier servi. Comme dev est avant main, dev s'appliquera à ces chemins, mais pas main.
+Comme dev a le drapeau security: false, pas d'authentification sur ces URLs.
+
+Le flag lazy signifie que même si on entre dans le périmètre du firewall concerné, celui ci ne fera rien tant qu'on ne fait pas une demande de vérifications des
+droits quelque part.
+
+On voit qu'un UserProvider est configuré, ca a été fait automatiquement avec la commande make:user.
+Il reste maintenant à gérer les mots de passes.
+
+Ne doit pas sauvegarder les mdp tels quels, car si la DB fuite sur le net, les mdp seront visibles en plain text directement. Catastrophique.
+
+On va commencer par créer un formulaire d'enregistrement pour nos utilisateurs:
+	symfony console make:registration
+
+Cette commande nous génère donc la vue pour le formulaire, la classe XXXType, et le contrôleur avec la fonctionnalité d'enregistrement implémentée.
+
+Dans la classe de formulaire, on voit que le champ plainPassword n'est pas mappé, à cause de 'mapped' => false.
+Cela signifie que, dans le contrôleur qui implémente l'enregistrement des utilisateurs, on pourra obtenir la donnée plainPassword:
+	$form->get('plainPassword')->getData()
+Mais cette donnée ne sera pas appliquée à l'entité.
+
+Dans le contrôleur généré, on observe que le hachage du mot de passe requière l'instance de l'objet représentant l'utilisateur:
+
+            $user->setPassword($userPasswordHasher->hashPassword($user, $plainPassword));
+
+Pourquoi ? En allant sur security.yaml, on voit:
+
+    security:
+        password_hashers:
+            # By default, password hashers are resource intensive and take time. This is
+            # important to generate secure password hashes. In tests however, secure hashes
+            # are not important, waste resources and increase test times. The following
+            # reduces the work factor to the lowest possible values.
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4 # Lowest possible value for bcrypt
+                time_cost: 3 # Lowest possible value for argon
+                memory_cost: 10 # Lowest possible value for argon
+
+Ces lignes indiquent pour quelle classes utiliser quelle algorithme de hachage.
+Ici donc, la configuration est telle que toute classe qui hérite de PasswordAuthenticatedUserInterface soit configuré "auto" c'est à dire
+utilise un algorithme de hashage automatiquement choisi par Symfony. C'est pour ça qu'on passe l'objet $user au hacheur.
+
+==
+
+Création d'un Authenticator et formulaire de login.
+
+On commence:
+	symfony console make:security:form-login
+
+Une fois fait, on observe que security.yaml a été altéré:
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            lazy: true
+            provider: app_user_provider
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                enable_csrf: true
+            logout:
+                path: app_logout
+                # where to redirect after logout
+                # target: app_any_route
+
+Ici, la section form_login conçerne le formulaire d'inscription. Les membres sont:
+	login_path: Indique la route ou redirigier pour tomber sur le formulaire de connexion, par ex. quand un utilisateur anonyme tente un accès à un endroit sécurisé.
+	check_path: Indique le nom de la route ou le formulaire va envoyer les données de login.
+	enable_csrf: Indique si la sécurité anti CSRF doit être active.
+
+Pour la section logout:
+	path spécifie la route ou on exposera le point en POST de déconnexion.
+	target permet de spécifier la route vers laquelle l'utilisateur est redirigé à l'issue d'une déconnexion

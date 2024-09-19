@@ -1,0 +1,97 @@
+Fonctionnement de base:
+
+{# commenter quelque chose #}
+{% faire quelque chose %}
+{{ afficher quelque chose }}
+
+{% extends 'base.html.twig' %} indique qu'un fichier twig en hérite d'un autre.
+Le fichier enfant va pouvoir surcharger les blocks de codes délimités par {% block <nom du block> %} et {% endblock %} du fichier parent.
+Si du contenu est présent dans les blocks déclarés au sein du parent, ce contenu sera la valeur par défaut.
+
+Il existe également dans Twig les filtres, utilisés avec le symbole |, qui sont exactement comme les pipes d'Angular. Exemple:
+	<li class="list-group-item">Date de naissance : {{ author.dateOfBirth|date('d M Y') }}</li>
+Ici,
+	author.dateOfBirth|date('d M Y')
+Indique qu'on formatte la propriété dateOfBirth (de type DateTimeImmutable) comme une date, pour qu'elle puisse être affichée. Si on ne le fait pas on obtient une erreur,
+car la classe DateTimeImmutable ne possède pas la fonction magique __toString (nécessaire à l'affiche sur l'interface, donc)
+
+Comme sur Angular, on a également accès aux opérateurs ternaires:
+
+<li class="list-group-item">Date de décès : {{ author.dateOfDeath is not null ? author.dateOfDeath|date('d M Y') : '-' }}</li>
+
+On peut utiliser une extension de Twig prenant en charge l'internationalisation. Elle ajoute un filtre qui traduit les codes de pays (comme FR) vers les noms de ces
+pays. On l'ajoute:
+	symfony composer require twig/intl-extra
+
+On l'utilise:
+	<p><small>Nationalité : {{ author.nationality|country_name }}</small></p>
+
+Ensuite on aura "Panama" si author.nationality vaut "PA".
+
+==
+
+-- Les liens --
+
+On peut utiliser la fonction path( <nom de la route ciblée>, <optionels, paramètres à passer à cette route> ) pour générer le href
+de balises <a> et mettre en place des liens vers des routes.
+Exemple: j'ai une route nommée app_entity_details, ayant une URL /entity/{id}
+Je créer son lien de la sorte:
+	<a href="{{ path( 'app_entity_details', {id: entity.getId() } ) }}">Details</a>
+
+==
+
+Itérations for:
+
+<h1>Members</h1>
+<ul>
+    {% for user in users %}
+        <li>{{ user.username|e }}</li>
+    {% endfor %}
+</ul>
+
+Afficher tous les chiffres de 0 à 10:
+
+{% for i in 0..10 %}
+    * {{ i }}
+{% endfor %}
+
+Toutes les lettres de a à z:
+
+{% for letter in 'a'..'z' %}
+    * {{ letter }}
+{% endfor %}
+
+Si aucune itération, else:
+
+<ul>
+    {% for user in users %}
+        <li>{{ user.username|e }}</li>
+    {% else %}
+        <li><em>no user found</em></li>
+    {% endfor %}
+</ul>
+
+Conditions avec if:
+
+{% if online == false %}
+    <p>Our website is in maintenance mode. Please, come back later.</p>
+{% endif %}
+
+{% if not user.subscribed %}
+    <p>You are not subscribed to our mailing list.</p>
+{% endif %}
+
+Conditions avec if, elseif, else:
+
+{% if product.stock > 10 %}
+   Available
+{% elseif product.stock > 0 %}
+   Only {{ product.stock }} left!
+{% else %}
+   Sold-out!
+{% endif %}
+
+
+{% if temperature > 18 and temperature < 27 %}
+    <p>It's a nice day for a walk in the park.</p>
+{% endif %}

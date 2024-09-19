@@ -1,0 +1,29 @@
+Le composant AssetMapper sert à faire le lien entre nos fichiers et nos templates Twig facilement.
+Il utilise les importmaps HTML.
+Un importmap est un script JS qui va permettre de déclarer des alias qui vont pointer vers des liens d'imports/exports.
+
+Exemple:
+
+<script type="importmap">
+  {
+    "imports": {
+      "carre": "./module/formes/carre.js",
+      "cercle": "https://example.com/formes/cercle.js"
+    }
+  }
+</script>
+
+Va me permettre de faire ailleurs:
+
+import { nom as nomCarre, dessiner } from "carre";
+import { nom as nomCercle } from "cercle";
+
+AssetMapper est ajouté au projet par défaut si il est créé avec l'option --webapp
+AssetMapper permet d'éviter WebPack ainsi que de la lourdeur pour inclure des librairies JS sur nos pages.
+
+Exemple, ajouter Bootstrap à mon projet:
+	symfony console importmap:require bootstrap
+
+Ensuite, j'ajoute le fichier css:
+	import './vendor/bootstrap/dist/css/bootstrap.min.css';
+Dans assets/app.js, juste avant la ligne import './styles/app.css';

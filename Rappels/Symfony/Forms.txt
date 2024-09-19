@@ -1,0 +1,183 @@
+Créer un FormType:
+	symfony console make:form
+
+Exemple: j'utilise cette commande, pour faire un objet formulaire représentant l'entrée des données d'un livre, de la classe entité Book, je lui spécifie BookType comme
+nom de classe de l'objet formulaire (on met Type à la fin, par convention)
+Si la classe entité Book est prête, je peut spécifier directement comme ça:
+	symfony console make:form BookType Book
+
+==
+
+Si on a Boostrap, on peut entourer le formulaire de :
+	<div class=”w-50 m-auto”>  
+pour réduire la largeur à 50 % de la page tout en centrant le formulaire. 
+
+==
+
+L'affichage de FormTypes avec Twig:
+
+Soit simplement form(form) (qui génère la vue du formulaire), soit:
+
+form_start(form)  génère l’affichage de la balise d’ouverture de notre formulaire ;
+
+form_widget(form)  génère l’affichage des champs de notre formulaire, avec leurs labels et erreurs éventuelles ;
+
+alternativement, appelez  form_row(form.[nom_d_un_champ])  pour afficher un seul champ avec son label et son erreur éventuelle ;
+
+form_end(form)  génère l’affichage de la balise de fin de notre formulaire, ainsi que l’affichage de tous les champs que vous auriez oublié d’afficher.
+
+Pour traîter les données du formulaire, côté contrôleur:
+
+<?php
+// …
+    #[Route('/new', name: 'app_admin_author_new', methods: ['GET', 'POST'])]
+    public function new(Request $request): Response
+    {
+        $author = new Author();
+        $form = $this->createForm(AuthorType::class, $author);
+        
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            // faire quelque chose
+        }
+    // …
+
+On récupère l'objet Request pour pouvoir la gérer avec le formulaire.
+On pense à autoriser le POST pour reçevoir les données du formulaire.
+
+Exemple:
+
+    public function new(Request $request): Response
+    {
+        // just set up a fresh $task object (remove the example data)
+        $task = new Task();
+
+        $form = $this->createForm(TaskType::class, $task);
+
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            // $form->getData() holds the submitted values
+            // but, the original `$task` variable has also been updated
+            $task = $form->getData();
+
+            // ... perform some action, such as saving the task to the database
+
+            return $this->redirectToRoute('task_success');
+        }
+
+        return $this->render('task/new.html.twig', [
+            'form' => $form,
+        ]);
+    }
+
+Je met mon formulaire dans le fichier .twig de la sorte:
+
+// …
+    {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <button type="submit" class="btn btn-primary">Envoyer</button>
+    {{ form_end(form) }}
+// …
+
+On remarque que le boutton de confirmation n'est pas généré et que je dois l'ajouter moi même.
+
+Je peux configurer Twig pour modifier le style de mes formulaires:
+
+# config/packages/twig.yaml
+twig:
+    form_themes: ['bootstrap_5_layout.html.twig']
+
+==
+
+-- La validation --
+
+Si elle ne fonctionne pas sur mon application, pour les applis avec Symfony Flex, je peux essayer de faire:
+	composer require symfony/validator
+Avant de l'utiliser sur mon projet.
+
+--
+
+Typiquement, pour la validation, on ajoute des contraintes directement aux classes de nos objets (on le fait sur les classes XXXType que si on a vraiment pas le
+choix)
+
+Les contraintes = classes qui sont quasi toutes situées dans "Symfony\Component\Validator\Constraints", on a coutume des les utiliser en tant que "Assert".
+
+Quelques contraintes:
+	NotBlank: vérifie que la valeur n'est pas null, false, ou une chaîne de caractères vide
+	Length: pertmet de vérifier qu'une chaîne possèdent un mini ou un maxi de caractères, ou les deux
+	Email: vérifie que c'est une e-mail valide
+	EqualTo, GreaterThan, LowerThan: comparaisons logiques classiques, peuvent être utilisées pour comparer deux propriétés ensemble
+	Choice: vérifie que la valeur est dans une liste de choix autorisés
+	AtLeastOneOf: prenr en paramètre un array d'autre contraites, et valide si au moins une est valide
+
+Exemple d'utilisation de ces validations:
+
+<?php
+// …
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
+
+#[UniqueEntity(['name'])]
+#[ORM\Entity(repositoryClass: AuthorRepository::class)]
+class Author
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+    
+    #[Assert\Length(min: 10)]
+    #[Assert\NotBlank()]
+    #[ORM\Column(length: 255)]
+    private ?string $name = null;
+    
+    #[Assert\NotBlank()]
+    #[ORM\Column(type: Types::DATE_IMMUTABLE)]
+    private ?\DateTimeImmutable $dateOfBirth = null;
+    
+    #[Assert\GreaterThan(propertyPath: 'dateOfBirth')]
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $dateOfDeath = null;
+    
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $nationality = null;
+    
+    #[ORM\ManyToMany(targetEntity: Book::class, mappedBy: 'authors')]
+    private Collection $books;
+    // …
+}
+
+Sinon, je peut ajouter mes contraintes directement sur le fichier de la classe XXXType:
+
+<?php
+// …
+use Symfony\Component\Validator\Constraints as Assert;
+// …
+class BookType extends AbstractType
+{
+    public function buildForm(FormBuilderInterface $builder, array $options): void
+    {
+        $builder
+        // …
+            ->add('certification', CheckboxType::class, [
+                'mapped' => false,
+                'label' => "Je certifie l'exactitude des informations fournies",
+                'constraints' => [
+                    new Assert\IsTrue(message: "Vous devez cocher la case pour ajouter un livre."),
+                ],
+            ])
+    // …
+
+Par défaut, les erreurs de validation s'affichent sur l'interface en anglais. Je peux les mettre en français en allant sur:
+	config/packages/translations.yaml
+Et en modifiant les deux occurences de 'en' en 'fr'.
+Exemple:
+
+framework:
+    default_locale: fr
+    translator:
+        default_path: '%kernel.project_dir%/translations'
+        fallbacks:
+            - fr
+        # …
+
