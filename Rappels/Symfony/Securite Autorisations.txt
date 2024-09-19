@@ -8,7 +8,7 @@ A chaque fois qu'on voudra vérifier un accès, on le fera par le biais d'une m�
 
 Cela se fait de la sorte:
 
-	1. On poste une question (comme "L'User peut il acceder à cette page?")
+	1. On pose une question (comme "L'User peut il acceder à cette page?")
 	2. La méthode isGranted appelle tous les Voters enregistrés dans l'appli et leur demande.
 	3. Chaque Voter va soit s'abstenir, soit donner/refuser l'accès.
 

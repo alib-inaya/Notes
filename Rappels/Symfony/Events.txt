@@ -1,0 +1,85 @@
+On va utiliser l'EventDispatcher. Il permet de découpler notre appli.
+Découpler = réduire les dépendances entre les différentes parties de notre application.
+
+EventDispatcher permet de "dispatcher" des objets appelés Events (des évènements).
+On va travailler avec des EventListeners et des EventSubscribers.
+Ces deux écoutent les évènements.
+
+EventListener = un appelable (un callable, ex: une fonction, méthode d'une classe, ou classe ayant la méthode magique __invoke)
+
+On écris le callable, on l'enregistre auprès du EventDispatcher en indiquant quel évènement ce Listener écoute, puis quand l'event est dispatché, l'EventDispatcher appelle le
+Listener en lui passant l'obet d'évènement.
+
+Pour enregistrer un EventListener au dispatcher, il faut ajouter l'attribut AsEventListener avec le nom de l'event qu'on souhaite écouter.
+Exemple:
+
+<?php
+final class ExceptionListener
+{
+
+    #[AsEventListener(event: KernelEvents::EXCEPTION)]
+    public function onKernelException(ExceptionEvent $event): void
+    {
+        // code exécuté lorsque l'event est reçu
+    }
+}
+
+Enregiste auprès de l'EventDispatcher la fonction onKernelException comme listener qui sera appellé dès qu'un event KernelEvents::EXCEPTION aura lieu.
+
+==
+
+Un EventSubscriber, lui est une classe qui regroupe plusieurs Listeners enregistrés automatiquement au sein d'une méthode getSubscribedEvents.
+Exemple:
+
+<?php
+class ExceptionSubscriber implements EventSubscriberInterface
+{
+    public function onKernelException(ExceptionEvent $event): void
+    {
+        // code exécuté lorsque l'event est reçu
+    }
+    
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            // On enregistre les listeners avec des paires: nom de l'event => méthode à exécuter
+            KernelEvents::EXCEPTION => 'onKernelException',
+        ];
+    }
+}
+
+==
+
+Les listeners ont aussi une priorité. Elle définit leur ordre dès leur appel.
+Lors du dispatch d'un Event, les listeners conçernés sont triés de la priorité la plus haute à la plus basse.
+Un listener de haute priorité est appellé avant.
+
+Il y a aussi la notion de propagation, qui signifie que si un listener à plus haute priorité stoppe la propagation d'un Event, ceux de priorité plus basse ne seront
+pas appellés.
+Pour le faire, on utilise la méthode:
+	$event->stopPropagation();
+
+Pour donner une priorité à un listener, on la spécifie:
+
+<?php
+final class ExceptionListener
+{
+    #[AsEventListener(event: KernelEvents::EXCEPTION, priority: 10)]
+    public function onKernelException(ExceptionEvent $event): void
+    // …
+}
+
+Dans un Subscriber, on le fait de telle sorte:
+
+<?php
+class ExceptionSubscriber implements EventSubscriberInterface
+{
+    // …
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            KernelEvents::EXCEPTION => ['onKernelException', 10],
+        ];
+    }
+    // …
+}
