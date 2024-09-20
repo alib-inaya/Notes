@@ -1,0 +1,26 @@
+Dans un fichier CSS:
+
+@media all {
+	.maClasse {
+		// ...
+	}
+}
+
+La 'media query' requête media @media indique qu'elle s'applique à tous type d'appareil 'all'.
+
+Autre exemple:
+
+@media all and (min-width: 1000px) {
+	.maClasse {
+		// Code CSS appliqué sur .maClasse dans le cas ou le viewport de l'appareil fait au moins 1000 pixels de largeur
+	}
+}
+
+@media all and (max-width: 1000px) {
+	.maClasse {
+		// Code CSS appliqué sur .maClasse dans le cas ou le viewport de l'appareil au maximum 1000 pixels de largeur
+	}
+}
+
+Ici on a du code exécuté sur tout type d'appareil & quand l'écran fait moins de 1000 px de largeur ainsi que du code exécute sur tout type d'appareil & quand l'écran
+fait plus de 1000px de largeur.

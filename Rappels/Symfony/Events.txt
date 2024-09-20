@@ -83,3 +83,22 @@ class ExceptionSubscriber implements EventSubscriberInterface
     }
     // …
 }
+
+==
+
+Une commande pour lister les EventListeners enregistrés à l'EventDispatcher:
+	symfony console debug:event-dispatcher 
+
+Les principaux events du Kernel Symfony:
+
+	- 'kernel.request', de classe RequestEvent, trigger quand le Kernel commence à traiter une requête. Le Routing = Listener trigger à cet event. Permet de stopper
+	la propagation et envoyer une réponse anticipée.
+	- 'kernel.controller', de classe ControllerEvent, trigger quand le routing a identifité la route et le contrôleur associé
+	- 'kernel.controller_arguments', de classe ControllerArgumentsEvents, trigger quand le routing a vérif. que le contrôleur existe & identifié les arguments qu'il demande
+	- 'kernel.view', de classe ViewEvent, trigger quand le contrôler a été exécuté, seulement si il ne retourne pas d'objet Response
+	- 'kernel.response', de classe ResponseEvent, trigger quand le contrôleur a été exécuté et qu'on a un objet Response, après kernel.view (si il a été dispatché), permet
+	de modif. l'objet Response
+	- 'kernel.finish_request', de classe FinishRequestEvent, trigger après 'kernel.response', permet d'inspecter l'objet Request une dernière fois
+	- 'kernel.terminate', de classe TerminateEvent, trigger après l'envoi de la réponse au client, permet de faire traitements longs sans pénaliser l'utilisateur
+	- 'kernel.exception', de classe ExceptionEvent, trigger n'importe quand pendant que le Kernel traite la requête, si Exception levée mais qu'on la catch pas.
+	On reprend rensuite le flux normal depuis 'kernel.response' pour renvoyer notre exception sous forme de message d'erreur
