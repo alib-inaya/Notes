@@ -50,3 +50,34 @@ $request->attributes; // données ajoutées par Symfony
 $request->getMethod(); // renvoie la méthode HTTP de la requête
 $request->getPathInfo(); // renvoie la ressource demandée
 $request->getContent(); // renvoie le contenu brut de la requête
+
+==
+
+-- Configuration de Services --
+
+Admettons que j'ai un service MonService:
+
+namespace App\Service;
+
+class MonService
+{
+	public function __construct(string $maVariableUrl){ }
+
+	//...
+}
+
+Et ce service prend en injection une variable chaîne de caractères, dans son constructeur. Je souhaite la spécifier dans une configuration.
+Je peux configurer mes services dans config/services.yaml
+
+services:
+// ...
+    App\Service\MonService:
+        autowire: true
+        arguments:
+            $maVariableUrl: '%kernel.project_dir%/un/dossier'
+
+On voit qu'on peut y faire usage de variables spéciales entourées de %, les paramètres.
+En l'occurence kernel.project_dir, qui donne le chemin dossier du fichier composer.json du projet.
+
+On peut aussi y avoir accès en injectant Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface $params, de la sorte:
+	$params->get('kernel.project_dir')

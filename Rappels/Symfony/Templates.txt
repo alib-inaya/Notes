@@ -95,3 +95,20 @@ Conditions avec if, elseif, else:
 {% if temperature > 18 and temperature < 27 %}
     <p>It's a nice day for a walk in the park.</p>
 {% endif %}
+
+==
+
+Il existe dans Symfony un type spécial de messages: les flash. Ils s'appellent comme ça car ils ont une très courte durée: il subsistent dans la session que le temps d'être vu par les utilisateurs.
+On en ajoute un côté contrôleur de la sorte:
+
+	$this->addFlash('success', 'Article Created! Knowledge is power!');
+
+Côté template, ils sont lus de la sorte:
+
+{% for message in app.flashes('success') %}
+	<div class="alert alert-success">
+		{{ message }}
+	</div>
+{% endfor %}
+
+Ils sont parfaits pour, par exemple, afficher un message de succès à l'issue de l'envoi d'un formulaire.

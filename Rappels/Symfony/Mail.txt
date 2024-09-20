@@ -1,0 +1,74 @@
+Composantes de Symfony "Mailer" et "Mime" = puissantes pour la création & l'envoi d'emails.
+
+Installation:
+	composer require symfony/mailer
+
+Ensuite, configuration du transport:
+
+Dans un .env, on ajoute:
+
+MAILER_DSN=smtp://user:pass@smtp.example.com:port
+
+Puis dans dans config/packages/mailer.yaml:
+
+framework:
+    mailer:
+        dsn: '%env(MAILER_DSN)%'
+
+Le "transport" = système logiciel qui va s'occuper du transfert des emails.
+
+Transport intégrés à symfony:
+
+- SMTP. Le Mailer emploie un serveur SMTP pour l'envoi d'emails Exemple: smtp://user:pass@smtp.example.com:25
+(Un service hors de notre appli, donc, que l'on contacte pour l'envoi d'emails)
+- send-mail. Le Mailer utilise l'exécutable local 'sendmail' pour l'envoi d'emails. Exemple: sendmail://default
+- native. Le Mailer utilise l'exe. local 'sendmail' & les options config dans la val. 'sendmail_path' du php.ini
+Sur les hôtes Windows, Mailer revient "fallback" aux configs php.ini 'smtp' & 'smtp_port' quand 'sendmail_path' n'est pas config.
+
+Sinon, il y a des transports tierces, exemple, celui d'Amazon SES:
+	composer require symfony/amazon-mailer	
+Il y a aussi Azure, SendGrid, Mailgun, etc ...
+
+Le MAILER_DSN = pas une vraie addresse, juste un format convénient pour config facilement & rapidement.
+
+==
+
+-- Création & envoi d'emails --
+
+J'injecte quelquepars un MailerInterface. Je l'utilise ensuite de concert avec un objet Email que j'instancie & configure, et qui
+représente un email à envoyer.
+Le MailerInterface représente le transport.
+
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
+
+class MailerController extends AbstractController
+{
+    #[Route('/email')]
+    public function sendEmail(MailerInterface $mailer): Response
+    {
+        $email = (new Email())
+            ->from('hello@example.com')
+            ->to('you@example.com')
+            //->cc('cc@example.com')
+            //->bcc('bcc@example.com')
+            //->replyTo('fabien@example.com')
+            //->priority(Email::PRIORITY_HIGH)
+            ->subject('Time for Symfony Mailer!')
+            ->text('Sending emails is fun again!')
+            ->html('<p>See Twig integration for better HTML integration!</p>');
+
+        $mailer->send($email);
+
+        // ...
+    }
+}
+
+Il y a aussi d'autres types d'objets Email, comme un qui emploie Twig, TemplateEmail:
+
+$email = (new TemplatedEmail())
+	->from('')
+	->to('')
+	->subject('')
+	->htmlTemplate('XXX.html.twig')
+	->context(['uneValeur' => $uneValeur]);
