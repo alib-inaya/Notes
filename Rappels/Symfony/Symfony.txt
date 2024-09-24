@@ -81,3 +81,21 @@ En l'occurence kernel.project_dir, qui donne le chemin dossier du fichier compos
 
 On peut aussi y avoir accès en injectant Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface $params, de la sorte:
 	$params->get('kernel.project_dir')
+
+==
+
+Pour qu'on contrôleur renvoie un fichier:
+
+class MyController
+{
+	#[Route([...)]
+	public function index()
+	{
+		return $this->file( <Chemin du fichier>, <Nom du fichier> );
+	}
+}
+
+Si je ne veux pas qu'il soit téléchargé comme une archive (en Content-Disposition: attachment) mais plutôt
+visualisé au sein de la page, je peux faire:
+
+return $this->file( <Chemin du fichier>, <Nom du fichier>, ReponseHeaderBag::DISPOSITION_INLINE );

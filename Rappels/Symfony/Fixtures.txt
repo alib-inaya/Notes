@@ -1,0 +1,122 @@
+Ajouter données de test à la main = prend du temps, avoir données prêtes rapidement = facilite le travail
+P.dent dev app = commun de travailler av. données de test
+Données de test = "fixtures"
+Va utiliser librairie PHP pour génération auto. de fixture, librairie faisant partie de l'ecosystème Doctrine "Doctrine Fixtures Bundle"
+Va aussi aj. la dépendance "Foundry" qui va nous être utile
+
+Ajouter les libs. pour fixtures:
+	symfony composer require orm-fixtures zenstruck/foundry --dev
+
+'orm-fixtures' = alias pour 'doctrine/doctrine-fixtures-bundle'
+'zenstruck/foundtry' = deuxième librairie
+
+Le --dev spécifie que ces libs. ne servent qu'en env. de dév
+Danc composer.json on voit qu'il y a une section 'require' et une autre 'require-dev'
+Avec --dev indique d'ajouter ces librairies dans 'require-dev'
+
+Le fait d'installer Doctrine Fixtures Bundle à autom. ajouté un dossier DataFixtures dans src.
+Il contient 'AppFixture.php':
+
+<?php
+
+namespace App\DataFixtures;
+
+use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Persistence\ObjectManager;
+
+class AppFixtures extends Fixture
+{
+    public function load(ObjectManager $manager): void
+    {
+        // $product = new Product();
+        // $manager->persist($product);
+        $manager->flush();
+    }
+}
+
+On voit qu'il peut créer & enregistrer un objet. Cependant, les créer un par un = lourd, finirait pas faire un fichier énorme.
+On peut à la place demander à Foundry de les créer pour nous. Foundry dispose aussi d'une intégration avec MakerBundle.
+
+On va créer des classes, les factory, pour chacune de nos entités & automatiser leur création.
+
+Dans le terminal:
+	symfony console make:factory
+Ensuite on choisit pour quelle classe créer une factory.
+
+Disons qu'on l'a fait pour une classe d'entité 'Book'. On observe la factory générée:
+
+<?php
+// …
+final class BookFactory extends ModelFactory
+{
+    // …
+    protected function getDefaults(): array
+    {
+        return [
+            'cover' => self::faker()->text(255),
+            'editedAt' => \DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
+            'isbn' => self::faker()->text(255),
+            'pageNumber' => self::faker()->randomNumber(),
+            'plot' => self::faker()->text(),
+            'status' => self::faker()->randomElement(BookStatus::cases()),
+            'title' => self::faker()->text(255),
+        ];
+    }
+    // …
+}
+
+On voit que BookFactory#getDefaults() retourne un array indiquant la façon de generer les valeurs par défaut de chaque propriété de 
+l'entité Book.
+'faker' = dep. installé avec Foundry permettant de gen. des données aléatoires pour les fixtures.
+
+On modifie la factory pour l'adapter à nos entités book:
+
+<?php
+final class BookFactory extends ModelFactory
+{
+    // …
+    protected function getDefaults(): array
+    {
+        return [
+            'cover' => self::faker()->imageUrl(330, 500, 'couverture', true),
+            'editedAt' => \DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
+            'editor' => EditorFactory::random(),
+            'authors' => AuthorFactory::random(),
+            'isbn' => self::faker()->isbn13(),
+            'pageNumber' => self::faker()->randomNumber(),
+            'plot' => self::faker()->text(),
+            'status' => self::faker()->randomElement(BookStatus::cases()),
+            'title' => self::faker()->unique()->sentence(),
+        ];
+    }
+    // …
+}
+
+On peut définir la locale/langue utilisée dans config/packages/zenstruck_foundry.yaml:
+
+when@dev: &dev
+    zenstruck_foundry:
+        # …
+        faker:
+            locale: fr_FR
+
+Dans nos factory, un appel a #unique() signifie que la valeur générée doit être différente à chaque fois.
+
+Enfin, dans src/DataFixtures/AppFixtures, il nosu reste à appeler nos factories:
+
+<?php
+class AppFixtures extends Fixture
+{
+    public function load(ObjectManager $manager): void
+    {
+        AuthorFactory::createMany(50);
+        EditorFactory::createMany(20);
+        UserFactory::createMany(5);
+        BookFactory::createMany(100);
+    }
+}
+
+Puis à charger nos fixtures sur la DB avec:
+	symfony console doctrine:fixtures:load
+On confirme que l'on souhaite purger la DB, et les fixtures sont chargées.
+

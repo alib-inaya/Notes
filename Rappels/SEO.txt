@@ -1,0 +1,5 @@
+Ajouter robots.txt (instructions crawlers pour éviter/autoriser des URLs du site), sitemap.xml (instructions crawlers sur l'arbre du site)
+Utiliser format images modernes & meilleures (webp, avif plutôt que png, jpeg)
+Eviter 'broken links'
+Ajouter l'attribut alt aux images
+Ajouter les <meta/> de nom 'description' et 'keywords'
