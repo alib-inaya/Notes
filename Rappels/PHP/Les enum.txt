@@ -185,4 +185,205 @@ enum Size
 
 ==
 
+-- Enums employant des Traits --
+
+Enums = peuvent s'appuyer sur des Traits, qui se comportent de la même façon que les classes. Précondition = que les traits utilisés dans l'enum ne doivent pas avoir de propriétés, que des méthodes & méthodes statiques.
+
+<?php
+
+interface Colorful
+{
+    public function color(): string;
+}
+
+trait Rectangle
+{
+    public function shape(): string {
+        return "Rectangle";
+    }
+}
+
+enum Suit implements Colorful
+{
+    use Rectangle;
+
+    case Hearts;
+    case Diamonds;
+    case Clubs;
+    case Spades;
+
+    public function color(): string
+    {
+        return match($this) {
+            Suit::Hearts, Suit::Diamonds => 'Red',
+            Suit::Clubs, Suit::Spades => 'Black',
+        };
+    }
+}
+?>
+
+==
+
+-- Les valeurs d'Enums dans des expressions constantes --
+
+Les cases = représentés comme des constantes au sein de l'Enum -> peuvent êtres employés comme valeurs statiques dans la pluspart des expr. constantes: valeurs par défaut de propriétés, valeurs par défaut de variables statiques,
+valeurs par défaut de paramètres, valeurs de constantes (globales/de classe).
+
+Les appels implicites de méthodes magiques comme ArrayAccess avec [] ne sont pas permis dans des définitions constantes ou statiques car on ne peux pas garantir que la valeur retournée est déterministe ou que la méthode est sans effets
+de bords.
+Appels de fonctions, Appels de methodes, accès de propriété = opérations interdites dans des expressions constantes.
+
+==
+
+-- Différences par rapport aux objets --
+
+Enum = construits sur classes & objets, mais ne possèdent pas toutes les fonctionnalités liées aux objets.
+Cas d'Enum = ne peuvent pas avoir d'états (interdit).
+Pour les enums, sont interdits: les constructeurs & destructeurs, l'héritage, les propriétés statiques ou propriétés objets, le clonage de Enum Cases "cas d'Enums", car ils sont des singletons, les méthodes magiques sauf exception.
+Les Enums = doivent tjrs êtres déclarés avant d'être employés.
+
+Fonctionnalités d'objets permises aux Enums:
+	- Les méthodes, méthodes statiques, constantes, privées, protégés ou publics;
+	- L'implémentation d'un nombre quelconque d'interfaces;
+	- Les attributs, sur les Enums ou les cas d'Enums (le filtre de ciblage TARGET_FILTER contient une option pour cibler les Enums, et TARGET_CLASS_CONST les cas d'Enums);
+	- Les méthodes magiques __call, __callStatic, __invoke
+	- Les constantes __CLASS__ et __FUNCTION__ se comportent normalement
+	
+La constante magique ::class sur un type Enum s'évalue au nom du type incluant tout namespace, comme pour un objet.
+La constante magique ::class sur l'instance d'un Case 'cas d'Enum' s'évalue au type de l'Enum, car elle est une instance de ce type.
+
+Les cas d'Enum ne peuvent pas être instanciés directement avec new, ni avec ReflectionClass::newInstanceWithoutConstructor() en reflection.
+Les deux donnent une erreur.
+
+<?php
+
+$clovers = new Suit();
+// Error: Cannot instantiate enum Suit
+
+$horseshoes = (new ReflectionClass(Suit::class))->newInstanceWithoutConstructor()
+// Error: Cannot instantiate enum Suit
+?>
+
+
+==
+
+-- Lister les valeurs d'un Enum --
+
+Les Enums (aussi bien pures que 'backed') implément une interface interne, UnitEnum. Elle inclue une méthode statique, cases()
+Cette méthode retourne un array de tous les cas d'Enum 'Cases' définis, dans l'ordre de déclaration. Exemple:
+
+<?php
+
+Suit::cases();
+// Produces: [Suit::Hearts, Suit::Diamonds, Suit::Clubs, Suit::Spades]
+?>
+
+==
+
+-- La sérialisation (Serialization) --
+
+Enums = serialisés differement des objets. Ils ont un code de sérialisation spécifique "E" qui spécifie le nom du cas d'Enum.
+La routine de deserialisation peut ensuite utiliser ça pour mettre une varaible à la valeur singleton existante.
+
+<?php
+
+Suit::Hearts === unserialize(serialize(Suit::Hearts));
+
+print serialize(Suit::Hearts);
+// E:11:"Suit:Hearts";
+?>
+
+Permet de faire de sorte à ce que, dès deserialisation, si un enum & case ne peuvent être trouvés matchant la valeur serialisée, un avertissement
+est lancé & la valeur false renvoyée.
+
+Si un Pure Enum est serialisé en JSON, une erreur est lancée. Si un Backed Enum est serialisé en JSON, il sera représenté par sa valeur scalaire
+seulement, dans le type approprié. Le comportement de deux peut être surchargé en implémentant JsonSerializable.
+
+Pour les Enums, print_r renvoie une sortie pour un cas d'Enum qui sera légèrement différent de celle des objets pour minimiser toute confusion.
+
+<?php
+
+enum Foo {
+    case Bar;
+}
+
+enum Baz: int {
+    case Beep = 5;
+}
+
+print_r(Foo::Bar);
+print_r(Baz::Beep);
+
+/* Produces
+
+Foo Enum (
+    [name] => Bar
+)
+Baz Enum:int {
+    [name] => Beep
+    [value] => 5
+}
+*/
+?>
+
+==
+
+-- Pourquoi les Enums ne peuvent pas être étendus (extended) --
+
+Les classes = ont des contrats sur leurs méthodes:
+
+<?php
+
+class A {}
+class B extends A {}
+
+function foo(A $a) {}
+
+function bar(B $b) {
+    foo($b);
+}
+?>
+
+Ce code = type-safe, car: B suit le contrat de A, et par la co/contra-variance, tout ce qu'on attend des méthodes est préservé, sauf exceptions.
+Enums = ont des contrats sur leurs cas, pas sur leurs méthodes:
+
+<?php
+
+enum ErrorCode {
+    case SOMETHING_BROKE;
+}
+
+function quux(ErrorCode $errorCode)
+{
+    // When written, this code appears to cover all cases
+    match ($errorCode) {
+        ErrorCode::SOMETHING_BROKE => true,
+    }
+}
+
+?>
+
+On voit par analyse statique que le match ici dans la fonction quux recouvre tous les cas de l'enum ErrorCode.
+Mais imaginons qu'on puisse extend les Enums:
+
+<?php
+
+// Thought experiment code where enums are not final.
+// Note, this won't actually work in PHP.
+enum MoreErrorCode extends ErrorCode {
+    case PEBKAC;
+}
+
+function fot(MoreErrorCode $errorCode) {
+    quux($errorCode);
+}
+
+fot(MoreErrorCode::PEBKAC);
+
+?>
+
+Ce ne sera alors plus le cas, et puisque match ne connait pas MoreErrorCode::PEBKAC, le match lancera une exception si il rencontre ce cas.
+C'est la raison pour laquelle les enums sont 'final' et ne peuvent pas être étendus 'extended'.
+
+
 

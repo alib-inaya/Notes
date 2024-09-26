@@ -1,0 +1,51 @@
+PHP => a un modèle d'exceptions similaire aux autres lang. de prog.
+Une exception peut être lancée 'thrown (throw)' et attrapée 'caught (catch)' au sein de PHP.
+Peut entourer code avec un block try. Chaque try => doit av.r au moins 1 block catch ou finally correspondant.
+
+Si une exception n'a aucun block catch dans son scope actuel de fonction, elle monte dans la pile d'appel 'call stack' jusqu'à la fonction
+appelante jusqu'à ce quelle tombe sur un block catch qui peut l'attraper.
+Si elle remonte jusqu'au 'global scope' sans rencontrer un block catch pour l'attraper, le programme se termine avec une erreur fatale, sauf si
+un gestionnaire d'exception global a été mis en place.
+
+Objet 'thrown' lancé => doit être instanceof Throwable. Essayer de throw un objet qui ne l'est pas lancera une erreur PHP Fatal error.
+
+Depuis PHP 8.0.0, le mot-clé throw = une expression & peut être utilisé dans tout contextes d'expressions. Dans les vers. précédentes, c'était
+un 'statement' et requièrait sa propre ligne.
+
+==
+
+-- catch --
+
+block catch => def.nit comment rep. à une except.n lancée
+	=> def. 1 ou + types de Exception ou Error qu'il peut gérer & facultativement une variable à laquelle assigner l'exception
+		(La variable = requise avant PHP 8.0.0)
+	=> Le 1er block catch qu'une Exception ou Error qui a été throw va rencontrer la gérera
+
+Plusieurs blocks catch peuvent être employés pour attraper différentes classes d'exceptions/errors.
+L'exécution normale (quand aucune throwable est lancé au sein du block try) continuera après la fin du dernier block catch défini dans la séquence.
+Les Exceptions/Errors peuvent être thrown ou re-thrown au sein d'un block catch. 
+
+Quand Exception throw, le code suivant le statement ne sera pas exécutée & PHP va essayer de trouver le premier block catch qui match.
+Si exception pas attrapé, erreure fatale PHP avec un msg "Uncaught Exception ...", sauf si un gestionnaire a été défini 
+avec set_exception_handler()
+
+Depuis PHP 7.1.0 un block catch peut spécifier plusieurs Exceptions avec le caractère |.
+
+Depuis PHP 8.0.0, le nom de la variable pour une exception attrapée (dans un catch) est optionel.
+Si il n'est pas spécifié, le block cath s'execute quand même mais n'aura pas accès au Throwable.
+
+-- finally --
+
+Un block finally peut être spécifié après ou à la place de blocks catch.
+Le code à la fin de finally sera toujours exécuté, et après les blocks try et catch, qu'il y ai eu un Throwable d'attrapé ou non.
+
+[!]: Si un return est rencontré soit dans le try ou les blocks catch, le block finally est quand même exécuté.
+De plus, le statement 'return' est évalué dès sa rencontre, mais le resultat sera retourné seulement après l'exécution du block finally.
+Si en plus le block finally contient aussi un statement 'return', c'est la valeur de celui du block finally qui est renvoyée.
+
+-- Gestionnaire global d'exceptions (global exception handler) --
+
+Si une exception remonte jusqu'au scope global, elle est attrapée par le gestionnaire d'exception global si il est mis en place.
+C'est la fonction passée à set_exception_handler() qui est appellée à la place d'un block catch, si aucun autre block n'est rencontré.
+L'effet est le même que si tout le programme entier était entouré d'un block try-catch avec cette fonction comme catch.
+
