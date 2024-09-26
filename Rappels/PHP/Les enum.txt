@@ -1,0 +1,188 @@
+==
+
+-- Les Enums & les Pure Enums --
+
+Déclaration d'un enum:
+
+<?php
+
+enum Suit
+{
+    case Hearts;
+    case Diamonds;
+    case Clubs;
+    case Spades;
+}
+?>
+
+Les valeurs par défaut sont représentées en interne comme des classes, et pas comme des entiers (comme c'est le cas en C).
+Toute comparaison liée aux entiers entre ces valeurs que ce soit > ou < donnera donc false.
+Dans le cas ou les 'case' d'enums ne sont liées à aucune donnée liée comme les entiers, on les apelle 'Pure Case'.
+Un enum qui ne contient que des 'Pure Cases' est un 'Pure Enum'.
+
+==
+
+-- Les Backed Enums -- 
+
+On peut cependant avoir besoin de transmettre nos enums hors de notre programme, ce qui nécessite de les représenter avec des données facilement
+serialisable.
+On peut associer nos cas d'énumération à des 'scalar' (soit int soit string), on obtient alors des 'Backed Enumeration', exemple:
+
+<?php
+
+enum Suit: string
+{
+    case Hearts = 'H';
+    case Diamonds = 'D';
+    case Clubs = 'C';
+    case Spades = 'S';
+}
+
+print $Suit::Hearts; // Il affiche alors 'H'.
+
+?>
+
+Un cas associé à un équivalent scalaire est appellé 'Backed Case'. Car il est 'Backed' (supporté, tenu, épaulé) par une valeur plus simple.
+Un Enum entièrement composé de cas épaulés 'Backed Enum'.
+
+'Backed Enum' = backé par des types de int ou string. Un Enum donné ne supporte qu'un seul type à la fois (pas d'unions de int|string).
+Si une Enum est marquée comme ayant un equiv. scalaire, alors tous les cases doivent avoir un equivalent scalaire unique défini explicitement.
+Il n'y en a aucun de généra automatiquement (ex: des entiers sequentiels)
+Backed case = doit être unique.
+
+Les Backed Enums implémentent une interface interne 'BackedEnum', qui expose les fonctions:
+	from(int) ou from(string): Prend un scalaire et retourne le 'Enum case' correspondant. Lance une erreur ValueError si aucun n'est trouvé.
+				Utile dans le cas ou le scalaire donné en entré est de confiance & une valeur enum manquante devrait être
+				considérée comme erreur fatale, stoppant l'application.
+	tryForm(int) ou tryForm(string): Prend un scalaire et retourne le 'Enum case' correspondant. Si aucun trouvé, retourne null.
+				Utile quand valeur d'entrée n'est pas de confiance & l'appelant veut implémenter sa propre gestion des erreurs
+				ou logique de valeur par défaut.
+
+$scalaire = Suit::Clubs; // Vaut 'C'.
+$valEnum = Suit::from($scalaire); // Vaut Suit::Clubs.
+
+==
+
+Enums peuvent contenir méthodes & implem. interfaces.
+Si Enum implem. interface, alors tous vérification de type (type check) pour cette interface acceptera les cas de cet Enum.
+
+Exemple:
+
+<?php
+
+interface Colorful
+{
+    public function color(): string;
+}
+
+enum Suit implements Colorful
+{
+    case Hearts;
+    case Diamonds;
+    case Clubs;
+    case Spades;
+
+    // Fulfills the interface contract.
+    public function color(): string
+    {
+        return match($this) {
+            Suit::Hearts, Suit::Diamonds => 'Red',
+            Suit::Clubs, Suit::Spades => 'Black',
+        };
+    }
+
+    // Not part of an interface; that's fine.
+    public function shape(): string
+    {
+        return "Rectangle";
+    }
+}
+
+function paint(Colorful $c)
+{
+   /* ... */
+}
+
+paint(Suit::Clubs);  // Works
+
+print Suit::Diamonds->shape(); // prints "Rectangle"
+?>
+
+Dans un Backed Enum, les déclarations de l'interface vont après la déclaration de type backé.
+
+<?php
+
+interface Colorful
+{
+    public function color(): string;
+}
+
+enum Suit: string implements Colorful
+{
+    case Hearts = 'H';
+    case Diamonds = 'D';
+    case Clubs = 'C';
+    case Spades = 'S';
+
+    // Fulfills the interface contract.
+    public function color(): string
+    {
+        return match($this) {
+            Suit::Hearts, Suit::Diamonds => 'Red',
+            Suit::Clubs, Suit::Spades => 'Black',
+        };
+    }
+}
+?>
+
+Dans ces contextes, au sein d'une méthode, $this est défini et fait référence à l'instance du Case.
+
+==
+
+-- Méthodes statiques d'Enums --
+
+Enums peuvent avoir méthodes statiques:
+
+<?php
+
+enum Size
+{
+    case Small;
+    case Medium;
+    case Large;
+
+    public static function fromLength(int $cm): static
+    {
+        return match(true) {
+            $cm < 50 => static::Small,
+            $cm < 100 => static::Medium,
+            default => static::Large,
+        };
+    }
+}
+?>
+
+Principalement utiles pour mettre en place des constructeurs alternatifs, comme ci-dessus.
+L'héritage d'Enums n'est pas permis, donc les méthodes statiques privées comme protégées sont équivalentes.
+
+==
+
+-- Constantes d'Enums --
+
+Enum = peut contenir des constantes
+
+<?php
+
+enum Size
+{
+    case Small;
+    case Medium;
+    case Large;
+
+    public const Huge = self::Large;
+}
+?>
+
+==
+
+

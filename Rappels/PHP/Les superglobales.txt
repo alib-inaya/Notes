@@ -1,0 +1,48 @@
+Une superglobale = variable interne toujours dispo peu importe le contexte
+Inutile de faire:
+	global $variable;
+Pour y accéder au sein d'une fonction ou méthode.
+
+Liste des superglobales:
+
+$GLOBALS
+$_SERVER
+$_GET
+$_POST
+$_FILES
+$_COOKIE
+$_SESSION
+$_REQUEST
+$_ENV
+
+==
+
+La superglobale _GET est un tableau associatif qui contient les valeurs passées au script PHP via les paramètres d'URL "query string".
+Ce tableau n'est pas rempli que pour les requêtes GET, mais pour toutes avec un query string.
+
+Exemple: l'utilisateur entre http://exemple.com/?name=Francis
+
+Le code de la page:
+
+<?php
+echo 'Bonjour ' . htmlspecialchars($_GET["name"]) . '!';
+?>
+
+On obtient:
+
+Bonjour Francis!
+
+==
+
+La superglobale _POST est un tabl. associ. de valeurs passées au script via HTTP en méthode POST lors de l'utilisation du Content-Type
+"application/x-www-form-urlencoded" ou "multipart/form-data".
+
+Exemple, avec le code:
+
+<?php
+echo 'Bonjour ' . htmlspecialchars($_POST["name"]) . '!';
+?>
+
+On suppose que l'utilisateur a POSTé name=Franck
+
+On obtient 'Bonjour Franck!'

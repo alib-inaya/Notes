@@ -1,0 +1,61 @@
+Traits = mécanisme de réutilisation du code
+Trait = semblable à une classe (mais peut pas être instanciée et ne sert qu'à grouper & réutiliser des fonctionnalités ensemble), pas possible
+	d'instancier un Trait lui même.
+Trait = ajout à l'héritage traditionnel permettant la composition horizontale de comportements, c.à.d réutiliser méthodes de classes sans besoin
+	d'héritage
+
+Exemple:
+
+<?php
+trait ezcReflectionReturnInfo {
+    function getReturnType() { /*1*/ }
+    function getReturnDescription() { /*2*/ }
+}
+
+class ezcReflectionMethod extends ReflectionMethod {
+    use ezcReflectionReturnInfo;
+    /* ... */
+}
+
+class ezcReflectionFunction extends ReflectionFunction {
+    use ezcReflectionReturnInfo;
+    /* ... */
+}
+?>
+
+Ici on "colle" le contenu du trait ezcReflectionReturnInfo dans une classe en y ajoutant "use ezcReflectionReturnInfo;"
+
+Ordre de prédécence: 
+	Méthodes de la classe courante < méthodes issues du Trait < Méthodes héritées
+
+==
+
+-- Insérer multiple traits --
+
+Une classe peut reçevoir plusieurs traits en même temps en les séparant par une virgule:
+
+<?php
+trait Hello {
+    public function sayHello() {
+        echo 'Hello ';
+    }
+}
+
+trait World {
+    public function sayWorld() {
+        echo 'World';
+    }
+}
+
+class MyHelloWorld {
+    use Hello, World;
+    public function sayExclamationMark() {
+        echo '!';
+    }
+}
+
+==
+
+-- Les conflits --
+
+Si deux Traits insèrent méthodes de même noms, erreur fatale levée si conflit pas explicitement résolu.

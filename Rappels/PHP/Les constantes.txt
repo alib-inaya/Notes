@@ -1,0 +1,32 @@
+On définis une constante:
+
+ - Soit quand on est hors d'une classe, de la sorte:
+	define('NOM_DE_MA_CONSTANTE', 'valeur de ma constante');
+On y accède avec NOM_DE_MA_CONSTANTE.
+
+ - Soit quand on est dans une classe de la sorte:
+	const NOM_DE_MA_CONSTANTE = 'valeur de ma constante';
+On y accède avec MaClasse::NOM_DE_MA_CONSTANTE.
+
+Quand on le fait avec define, si on utilise le nom de la constante mais qu'elle n'existe pas, PHP va tenter de résoudre ce nom comme
+une chaîne de caractères (malgré qu'il n'y ai pas de guillemets). 
+
+Pour éviter ce phénomène je peux utiliser la fonction constant('NOM_DE_MA_CONSTANTE') pour avoir accès à la valeur de ma constante.
+Ou bien n'utiliser que des constantes définies au sein de classes, car leurs noms n'est pas converti en chaîne de caractères quand
+elles ne sont pas trouvées, mais une exception est lancée à la place.
+
+Un nom de constante comme "FOO", "FOO2", "FOO_BAR" est valide, mais "2FOO" est invalide.
+Un nom comme "__FOO__" est déconseillé, car c'est la convention des constantes magiques données par PHP.
+Il pourrait y avoir collision avec une constante magique définie par défaut.
+
+Une constante est globale, accessible partout, et statique.
+
+Voici une constante définie dans une classe:
+
+class Constantes
+{
+	const MA_CONSTANTE = 1.0;
+}
+
+J'y accède avec Constantes::MA_CONSTANTE.
+Au sein d'une fonction memebre de la classe, je peux y accéder également avec self::MA_CONSTANTE.
