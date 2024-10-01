@@ -1,0 +1,75 @@
+Un generateur 'generator' => permet mettre en place itérateurs sans coût/complex. du dev. d'une classe qui impl. Iterator.
+	=> permet écrire code qui utilise foreach pour parcour. un jeu de données sans avoir à construire un tableau en mémoire
+	pouvant gacher mem. & nécessiter tps important pour génération.
+A la place => util. générateur, qui est identique à une fonction normale, mais au lieu de return une seule fois, un generateur
+peut utiliser yield autant de fois que necessaire, afin de fournir les valeurs à parcourir
+
+Exemple simple, la ré-implém. de la fonction range()
+range() génère un tableau contenant chaque valeur entre deux valeurs. range(0, 1000000) peut consom. +100 Mo de mém.
+Alternative: implém. un générateur xrange() qui n'aura besoin en meme que la création d'un obj. Iterator & garder trace en interne
+du statut courant du générateur, ce qui va consommer <1Ko (plus optimisé)
+
+Voici l'implémentation de range() mais sous la forme d'un générateur, xrange():
+
+<?php
+function xrange($start, $limit, $step = 1) {
+    if ($start <= $limit) {
+        if ($step <= 0) {
+            throw new LogicException('Step must be positive');
+        }
+
+        for ($i = $start; $i <= $limit; $i += $step) {
+            yield $i;
+        }
+    } else {
+        if ($step >= 0) {
+            throw new LogicException('Step must be negative');
+        }
+
+        for ($i = $start; $i >= $limit; $i += $step) {
+            yield $i;
+        }
+    }
+}
+
+/*
+ * Il est à noter que les fonctions range() et xrange() produisent le
+ * même affichage, ci-dessous.
+ */
+
+echo 'Nombres impairs à un seul chiffre depuis range() :  ';
+foreach (range(1, 9, 2) as $number) {
+    echo "$number ";
+}
+echo "\n";
+
+echo 'Nombres impairs à un seul chiffre depuis xrange() : ';
+foreach (xrange(1, 9, 2) as $number) {
+    echo "$number ";
+}
+?>
+
+==
+
+-- Les objets Generator --
+
+Quand fonction générateur est appelée => un objet de la classe interne Generator est retourné. Il implémente Iterator comme le ferait un objet iterateur 'forward-only' et il donne accès à des méthodes permettant de manip. l'état du
+générateur, y compris y envoyer/récuperer des valeurs.
+
+==
+
+-- Syntaxe des générateurs --
+
+Fonction-générateur = comme fonc. normale mais eu lieu de 'return' une valeur, un générateur en yield autant que nécessaire. Toute fonction contenant une instruction yield = générateur
+
+Quand une fonc-générateur est appelée, elle retourne un objet Generator que l'on peut itérer. 
+Qd on itère sur cet obj. (ex: avec foreach), PHP va appel. les méthodes d'itération de cet obj. a chaque fois qu'il voudra recup une valeur & sauvegarder l'état de la fonction-générateur quand il yield, 
+pour reprendre la ou il s'est arrêté pour recup la prochaine val. La valeur est renvoyée par le yield à chaque fois.
+
+Si plus de val. à fournir, la fonc. génér. peut return & le code appelant continuera comme si un tableau n'avait plus de val.
+
+[!] Générateur = peut retourner des valeurs, qui peuvent être récup avec Generator::getReturn()
+
+-- Le mot-clé yield --
+
+yield = le coeur d'une fonc.-générateur 

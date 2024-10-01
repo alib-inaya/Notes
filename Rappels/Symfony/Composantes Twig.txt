@@ -1,0 +1,32 @@
+On peut utiliser un système de composants réutilisables sur l'HTML avec Twig, comme Angular et React.
+On installe:
+	composer require symfony/ux-twig-component
+
+J'écris une classe qui va représenter ma composante:
+
+// src/Twig/Components/Alert.php
+namespace [...] ;
+
+use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
+
+#[AsTwigComponent]
+class Alert
+{
+    public string $type = 'success';
+    public string $message;
+}
+
+J'ajoute sa template au chemin: templates/components/Alert.html.twig
+
+<div class="alert alert-{{ type }}">
+    {{ message }}
+</div>
+
+Puis je l'utilise avec l'une de ces deux syntaxes:
+
+{{ component('Alert', {message: 'Hello Twig Components!'}) }}
+
+<twig:Alert message="Or use the fun HTML syntax!" />
+
+Penser à modifier la configuration twig_component.yaml selon le namespace de mes classes composantes et le fichier ou je met
+leur template.

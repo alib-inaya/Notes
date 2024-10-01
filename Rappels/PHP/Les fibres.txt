@@ -7,7 +7,7 @@ invoque la fonction.
 L'exéc peut être interrompue n'imp. où dans la pile d'appels en utilisant Fiber:suspend() qui peut être soit profondément imbriquée dans la Fiber,
 soit pas exister du tout.
 
-Contrairement aux Generator, un Fiber possède sa propre pile d'appels, ce qui le permet d'être mis en pause même dans des fonctions profondément
+Contrairement aux Generator, un Fiber possède sa propre pile d'appels, ce qui lui permet d'être mis en pause même dans des fonctions profondément
 imbriquées.
 Une fonc. déclarant un point d'interruption (c.à.d appelant Fiber::suspend()) n'a pas besoin de changer son type de retour, alors qu'une
 fonction utilisant yield doit retourner une instance de type Generator.

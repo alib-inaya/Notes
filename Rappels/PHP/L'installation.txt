@@ -1,0 +1,341 @@
+==
+
+-- Les prérequis --
+
+Sous Linux:
+	- Un compilateur ANSI C
+	- Des composantes spécifiques aux modules comme des librairies graphiques GD ou des librairies de PDF
+	- Optionel: Autoconf 2.5+ (Pour PHP < 7.0), Autconf 2.64+ (Pour PHP >7.2), Automake 1.4+, Libtool 1.4+, re2c 0.13.4+, Bison
+
+Sous Windows:
+	- Au moins Windows 2008/Vista. 32-bit ou 64-bit (AKA X86 ou X64). PHP fonctionne pas sur Windows RT/WOA/ARM.
+	Pour PHP >= 7.2.0, Windows 2008/Vista = plus supportés.
+	Pour PHP >= 8.3.0, Windows 2008 R2, Windows 7 = plus supportés.
+	- Le Visual C Runtime (CRT). (Le Microsoft Visual C++ Redistribuable pour Visual Studio 2022 convient pour tt versions de PHP)
+	- Doit telecharger CRT x86 pour compil. PHP x86 et CRT x64 pour compil PHP x64.
+
+Sous Mac: 
+	- Aucun. PHP vient avec, mais doit l'activer.
+
+==
+
+Les deux façons principales d'installer PHP sur un serveur Web (Apache, NGINX, ...):
+	- Soit comme un module (C'est alors le serveur Web qui gère PHP), façon classique
+	- Soit comme un programme CGI via FastCGI avec php-fpm, façon plus récente et performante
+		php-fpm = daemon CGI qui va communiquer avec le serveur web
+		acronyme fpm = FastCGI Process Manager
+
+==
+
+Exemples d'outils/logiciels installant PHP avec Apache: XAMPP, WampServer, BitNami
+
+==
+
+Stack LAMP = Linux Apache MySQL/MariaDB PHP/Python/Perl
+Autres déclinaisons: WAMP (Windows Apache MySQL/MariaDB PHP)
+
+==
+
+Config recommandée sous Windows:
+
+-- Activer OpCache --
+
+OpCache = extension incluse avec PHP pour Windows. Compile & optimise les scripts PHP & les met en cache mémoire pour pas avoir
+à les recompiler à chaque chargement de la page.
+
+Dans le php.ini:
+
+opcache.enable=On
+opcache.enable_cli=On
+
+Redémarrer le serveur Web.
+
+-- Activer WinCache --
+
+Recommandé si utilise ISS, surtout si env. héberg. Web partagé ou en utilisant le stockage de fichiers en réseau NAS.
+WinCache = plus supporté dès PHP 8.0.0
+Toutes app PHP bénéficie automatiquement de WinCache.
+Opérations système fichiers = mises en cache en mémoire.
+WinCache peut aussi mettre en cache mém des objs de l'utilisateur & les partager entre les processus php.exe ou php-cgi.exe
+(partager des objets entre les requêtes)
+Bcp d'applis Web majeurs = ont un plugin/extension/option de config pour utiliser WinCache.
+Si besoin hautes perfs => devrait l'util. dans nos applis
+Voir http://pecl.php.net/package/WinCache puis DL le DLL/.tgz WinCache & le placer dans le dossier d'extension PHP 
+(extensions_dir dans le php.ini)
+
+Dans php.ini:
+
+extension=php_wincache.dll
+wincache.fcenabled=1
+wincache.ocenabled=1 ; removed as of wincache 2.0.0.0 
+
+-- Configurer IIS --
+
+Dans console d'admin. IIS => installer module FastCGI & ajouter mappage du gestionnaire pour `.php` vers le chemin d'accès à
+PHP-CGI.exe (pas PHP.exe)
+Peut util. l'outil CLI APPCMD pour scripter la config IIS.
+
+-- Base de données --
+
+Si besoin d'un serv DB, les DB populaires fournissent des extensions PHP à utiliser.
+Si notre site Web n'a pas bcp de trafic, on peut exéc notre DB sur le même serv. que notre serv Web.
+PHP inclut les extensions mysqli et PDO_MYSQL.
+
+==
+
+-- Installation manuelle de PHP sous Windows --
+
+-- IIS --
+
+IIS = fourni avec Windows. Sur un serv. Windows, util. Server Manager pour ajouter le rôle IIS. Doit inclure la fonctionn.ité 
+CGI Role.
+Sur les bureaux Windows, util. le centre de contrôle d'ajout/suppr de programme p.r ajoute IIS.
+
+Ligne de commande pour config IIS & PHP avec AppCmd:
+
+--- Début ---
+@echo off
+
+REM download .ZIP file of PHP build from http://windows.php.net/downloads/
+
+REM path to directory you decompressed PHP .ZIP file into (no trailing \)
+set phppath=c:\php
+
+
+REM Clear current PHP handlers
+%windir%\system32\inetsrv\appcmd clear config /section:system.webServer/fastCGI
+REM The following command will generate an error message if PHP is not installed. This can be ignored.
+%windir%\system32\inetsrv\appcmd set config /section:system.webServer/handlers /-[name='PHP_via_FastCGI']
+
+REM Set up the PHP handler
+%windir%\system32\inetsrv\appcmd set config /section:system.webServer/fastCGI /+[fullPath='%phppath%\php-cgi.exe']
+%windir%\system32\inetsrv\appcmd set config /section:system.webServer/handlers /+[name='PHP_via_FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='%phppath%\php-cgi.exe',resourceType='Unspecified']
+%windir%\system32\inetsrv\appcmd set config /section:system.webServer/handlers /accessPolicy:Read,Script
+
+REM Configure FastCGI Variables
+%windir%\system32\inetsrv\appcmd set config -section:system.webServer/fastCgi /[fullPath='%phppath%\php-cgi.exe'].instanceMaxRequests:10000
+%windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='%phppath%\php-cgi.exe'].environmentVariables.[name='PHP_FCGI_MAX_REQUESTS',value='10000']"
+%windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='%phppath%\php-cgi.exe'].environmentVariables.[name='PHPRC',value='%phppath%\php.ini']"
+-- Fin --
+
+-- Apache --
+
+Plusieurs vers. d'Apache2 pour Win. 
+Les 'builds' de ApacheLounge = recommandés, mais autres options existent comme XAMPP, WampServer, BitNami, qui contiennent outils
+installation autom.
+
+Devrait utiliser mod_php ou mod_fastcgi pour charger PHP dans Apache.
+Si utilise mod_php, doit utilise une version TS de Apache, compilé avec la même vers. de Visual C & le même CPU (x86 ou x64)
+
+4 types de versions de PHP: 
+	- Thread-Safe(TS) - utilisé par les servs. Web n'ayant qu'un seul processus comme Apache avec mod_php
+	- Non-Thread-Safe(NTS) - utilisé pour IIS et les autres serveurs web FastCGI (Apache avec mod_fastcgi) & c'est la version
+	recommandée pour les scripts CLI
+	- x86 - système 32-bits
+	- x64 - système 64-bits
+
+==
+
+-- Compiler PHP --
+Voir sous Windows: https://wiki.php.net/internals/windows/stepbystepbuild
+Voir pour avec CygWin: https://www.php.net/manual/fr/install.unix.php
+
+==
+
+-- PHP en CLI sous Windows --
+
+Peut exéc. PHP en CLI sous Win sans avoir à faire de modifs:
+
+C:\php\php.exe -f "C:\PHP Scripts\script.php" -- -arg1 -arg2 -arg3
+
+Peut simplifier avec ces étapes (Les var. systèmes PATH et PATHEXT = importantes dans Windows, mais doit y ajouter, pas les écraser
+completement):
+
+	- Ajouter l'emplacement de l'exéc. PHP (php.exe, php-win.exe ou php-cli.exe selon notre vers. de PHP & préf. d'affichage) à
+	la var. d'env. PATH.
+	- Ajouter l'extension .PHP à la var. d'env. PATHEXT
+	- Associer l'extension .PHP av. un type de fichier. Ceci est fait en lançant la cmd:
+	assoc .php=phpfile
+	- Associer le type de fichier phpfile avec l'exécutable PHP approprié, fait avec la cmd:
+	ftype phpfile="C:\php\php.exe" -f "%1" -- %~2
+
+Avec ces étapes, peut exec les scripts PHP depuis n'imp. quel répertoire sans avoir besoin de taper l'exéc PHP ou l'extension .PHP &
+tous les params seront fournis au script pour traitement
+
+==
+
+-- Apache 2.x sous Windows --
+
+Installation PHP sous Apache 2.x Windows:
+
+Doit DL Apache 2.x & une vers. PHP qui convient
+
+Trois façons de mettre en place PHP avec Apache 2.x sous Windows. PHP peut s'exécuter comme:
+	- 'Handler' gestionnaire
+	- CGI
+	- FastCGI
+
+-- Installer comme un Handler Apache --
+
+Pour charger le module PHP pour Apache 2.x, ajouter lignes suivantes au httpd.conf de Apache:
+
+# before PHP 8.0.0 the name of the module was php7_module
+LoadModule php_module "c:/php/php8apache2_4.dll"
+<FilesMatch \.php$>
+    SetHandler application/x-httpd-php
+</FilesMatch>
+# configure the path to php.ini
+PHPIniDir "C:/php"
+
+[!] C'est le chemin d'accès à PHP qu'on doit mettre la ou il y a C:/php
+
+-- Exécuter PHP comme CGI --
+
+Pr lancer PHP comme CGI => doit placer les fichiers php-cgi dans le dossier désigné comme dossier CGI par la directive ScriptAlias
+Une ligne #! doit être placée dans les fichiers PHP, ligne qui va pointer au binaire PHP:
+
+#!C:/php/php.exe
+<?php
+  phpinfo();
+?>
+
+[!] Serv déployé en CGI = ouvert à plusieurs vulnérabilités. Voir: https://www.php.net/manual/en/security.cgi-bin.php pour mesures de
+sécurité.
+
+-- Exécuter PHP sous FastCGI --
+
+Plusieurs avantages par rapport à CGI. Mise en place = directe.
+	- Doit récupérer mod_fcgid de https://www.apachelounge.com les binaires Win32 y sont dispos.
+	- Puis installer le module selon instructions.
+	- Ensuite config. le serv web comme ci-dessous & modif tout chemin d'accès selon mon système:
+
+LoadModule fcgid_module modules/mod_fcgid.so
+# Where is your php.ini file?
+FcgidInitialEnv PHPRC        "c:/php"
+<FilesMatch \.php$>
+    SetHandler fcgid-script
+</FilesMatch>
+FcgidWrapper "c:/php/php-cgi.exe" .php
+
+Maintenant, les fichiers .php seront exécuter par un 'wrapper' PHP FastCGI.
+
+==
+
+-- Troubleshoot PHP sous Windows --
+
+1. Clique droit sur dossier temp pour voir les permissions
+2. Pour IIS, s'assurer que l'utilisateur 'IIS_User' a la permission MODIFY. Peut obtenir le dossier temp dans la config ou php info.
+
+==
+
+-- Installer PHP sous Linux --
+
+Typiquement il suffit d'installer les paquets depuis le package manager.
+
+Exemple sur Debian GNU/Linux et distributions similaires :
+
+	apt install php-common libapache2-mod-php php-cli
+
+APT installe & active autom.ement le module PHP our Apache 2, ainsi que ses deps. Apache doit être relancé pour rendre les changements effectifs:
+
+	/etc/init.d/apache2 stop
+	/etc/init.d/apache2 start
+
+On opère de la même façon pour installer les extensions PHP, exemple pour MySQL et cURL:
+
+	apt install php-mysql php-curl
+
+APT ajoute autom.ement les bonnes lignes aux fichiers connexes à php.ini comme /etc/php/7.4/php.ini, /etc/php/7.4/conf.d/*.ini
+selon l'extension il ajoute autom.ent des entrées comme extension=foo.so
+redémarrer le serv. web (ex: Apache) = nécessaire pour appliquer les changements
+
+Pb courants:
+	- Si scripts PHP = pas interprétés par le serv. Web => probable que PHP = pas été aj.té aux fich. de conf. du serv. web (sous Debian /etc/apache2/apache2.conf) ou équivalent
+	- Si extension apparemment installé mais ses fonct.s = pas déf., faut s'assurer que les lignes adéquates = insérés dans les fichiers .ini et/ou que le serv. Web = redémarré après installation
+
+==
+
+-- Installer PHP sous MacOS --
+
+PHP = embarqué sous MacOS depuis macOS Monterey (12.0.0)
+Doit l'activer av. le serveur Web par déf.t en décommentant qq lignes dans le fich. de conf. httpd.conf, le mode CGI et CLI sont actifs par défaut (accès via terminal)
+Encouragé de MAJ à la derniere vers. de PHP
+
+Installation standard = util./activ. le mod_php embarqué sous MacOS pour le serv. web Apache (le serv. web par défaut access. via les préf. systèmes), en qq étapes:
+
+1. Ouvrir le fich. de conf. Apache. Par déf. ce sera /private/etc/apache2/httpd.conf (Dans vers. de Mac OS X < 10.5, anciennes vers. de PHP & Apache. Le fich. de conf. d'Apache peut y être /etc/httpd/httpd.conf)
+
+2. Décommenter ces lignes:
+
+# LoadModule php5_module libexec/httpd/libphp5.so
+
+# AddModule mod_php5.c
+
+3. S'assurer que les bonnes extensions soient analysées par PHP (.php, .html, .inc). Ce comportement = actif dans httpd.conf depuis Mac Panther
+
+<IfModule mod_php5.c>
+    # If php is turned on, we respect .php and .phps files.
+    AddType application/x-httpd-php .php
+    AddType application/x-httpd-php-source .phps
+
+    # Since most users will want index.php to work we
+    # also automatically enable index.php
+    <IfModule mod_dir.c>
+        DirectoryIndex index.html index.php
+    </IfModule>
+</IfModule>
+
+4. S'assur. que DirectoryIndex charge le fichier index par défaut. Défini dans httpd.conf. Norm., les fich. index.php et index.html sont util.sés. Par déf. index.php = activé
+
+5. Déf.nir le chemin vers le fich. php.ini ou util.ser le chemin par déf.ut
+Chem. par déf. sous macOS: /usr/local/php/php.ini
+phpinfo() révèle cette info
+
+6. Trouver & définir DocumentRoot. C'est le dossier principal pour tous les fich.rs Web. Fichiers dans ce dossier = servis par le serv. Web
+Chemin par défaut = /Library/WebServer/Documents, mais peut être déf. à n'importe quelle val. dans le fichier httpd.conf
+Dossier DocumentRoot pour diff. util = /Users/yourusername/Sites
+
+7. On crée un fichier contenant phpinfo()
+<?php phpinfo(); ?>
+
+8. On redém. Apache & on charge le fichier PHP qu'on vient de créer.
+Pour redém:
+	sudo apachectl graceful
+Dans term. ou arrêter/démarrer l'option "Personal Web Server" dans les préf. sys. macOS.
+Par défaut, chargement de fichiers locaux dans le nav. s'effectue via des URL comme http://localhost/info.php, ou si on util le
+DocumentRoot d'un dossier utilisateur http://localhost/~yourusername/info.php
+
+==
+
+-- FastCGI Process Manager (FPM) --
+
+FPM = alternative à l'implém.tion PHP FastCGI, mais av. fonctionnalités supplémentaires utiles pour les sites très fort.ent chargés
+
+Ces fonc.tés incluent:
+
+	- Gestion avancée des processus avec stop/start doux (graceful)
+	- Pool avec travailleurs av. différents uid/gid/chroot/environnement écoutant différents ports et utilisant diff. php.ini
+	(remplace le safe_mode)
+	- Journalisation stdout et stderr configurable
+	- Redém. d'urgence en cas de destruction accidentelle du cache opcode
+	- Support de l'upload accéléré
+	- "slowlog" - journalisation des scripts (noms, backtrace PHP av. ptrace/équivalent) s'exécutent de maniere anormalement lente
+	- fastcgi_finish_request() - fonc. spéciale pour terminer requête & vider toutes les données en continuant d'exéc. tâche
+	consommatrice (conversion vidéo par ex)
+	- Naissance processus fils dynamic/ondemand/static
+	- Infos d'état de base & étendues (sim. à mod_status d'Apache) avec diff. formats supportés comme json, xml & openmetrics
+	- Fichier de conf. basé sur php.ini
+
+==
+
+-- Compiler depuis les sources --
+
+Pour activer FPM dans notre compilation de PHP depuis le code source, on ajoute la ligne --enable-fpm
+
+-- Config --
+
+FPM util. la syntaxe de php.ini pour son fich. de conf. php-fpm.conf & les fich. de conf. de la file d'attente
+
+Voir https://www.php.net/manual/fr/install.fpm.configuration.php
+
+==

@@ -1,0 +1,20 @@
+PHP (Acronyme récursif PHP: Hypertext Preprocessor) = langage de scripting open-source généraliste 'general-purpose' idéal pour le web
+dev & peut être intégré dans du HTML.
+
+Exemple:
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Example</title>
+    </head>
+    <body>
+
+        <?php
+            echo "Hi, I'm a PHP script!";
+        ?>
+
+    </body>
+</html>
+
+Code PHP = délimité par des instructions spéciale de début et de fin 'start and end processing instructions', <?php et ?>

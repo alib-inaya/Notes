@@ -1,0 +1,9 @@
+PECL = dépôt extensions PHP dispos via le package manager PEAR
+PEAR: https://pear.php.net/
+Va voir comment obtenir & installer extensions de PECL
+
+(On va supposer que /path/to/php/src/dir/ = le chemin jusqu'aux sources de la distrib. PHP, et extname = le nom de l'extension
+PECL)
+
+Utilisation commandes pear: https://pear.php.net/manual/en/guide.users.commandline.cli.php
+Infos commandes pear s'appliquent à la commande pecl
