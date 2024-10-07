@@ -17,4 +17,257 @@ Exemple:
     </body>
 </html>
 
-Code PHP = délimité par des instructions spéciale de début et de fin 'start and end processing instructions', <?php et ?>
+Code PHP = délimité par des instructions spéciale de début et de fin 'start and end processing instructions', <?php et ?> 
+permettant d'entrer & sortir du "mode PHP".
+
+Code PHP = exec. sur le serveur, génère de l'HTML qui est ensuite envoyé au client.
+
+PHP = focus sur le server-side scripting, donc peut faire tout ce qu'un programme CGI fait (collecter données formulaires, générer
+contenu dynamique de pages, envoyer/recv cookies), mais PHP peut faire plus
+
+2 façons principales d'util PHP:
+	- Server-side scripting. Type d'usage principal pour PHP. Besoin 3 choses: le parser (CGI ou module serveur), serveur web,
+	navigateur.
+	- Command line scripting. (idéal pour scripts lancés régulièrement comme avec
+	cron sous Unix/macOS et Task Scheduler sous Windows). Pour ça juste besoin parser PHP.
+
+PHP peut aussi "output" autre que du HTML comme des images, des PDF, PHP peut aussi des encrypter des données, envoyer des mails.
+Il peut "output" du JSON, du XML.
+
+PHP gère bcp de DB, soit en utilisant une extension spécifique à une db (comme mysql), soit une couche d'abstraction (comme PDO),
+soit pour se co à toute DB supportant le standard Open Database Connection l'extension ODBC.
+D'autres DB peuvent utiliser cURL, ou des sockets, comme CouchDB.
+
+PHP peut aussi gérer: LDAP, IMAP, SNMP, NNTP, POP3, HTTP, COM (sur Windows) & bien d'autres.
+PHP contient fonctionnalités traitement de texte: expressions régulières compatibles Perl (PCRE), extensions & utilitaires pour
+analyser & accéder aux XML, PHP standardise tt les extensions XML sur la base de libxml2 & étend les fonctionnalités
+en ajoutant le support de SimpleXML, XMLReader et XMLWriter.
+
+==
+
+-- Notre première page --
+
+On crée un fichier hello.php placé dans le dossier racine DOCUMENT_ROOT de notre serveur web avec:
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>PHP Test</title>
+    </head>
+    <body>
+        <?php echo '<p>Hello World</p>'; ?>
+    </body>
+</html>
+
+On accède ensuite à http://localhost/hello.php, ce fichier est ensuite traité par PHP pour donner
+ce contenu fourni à notre navigateur:
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>PHP Test</title>
+    </head>
+    <body>
+        <p>Hello World</p>
+    </body>
+</html>
+
+Un retour à la ligne se situant directement après ?> est supprimé par PHP.
+Pour contrecarrer ça, on peut ajouter un espace + retour à la ligne, ou bien echo/print explicitement un retour à la ligne via php.
+
+Les variables commencent toujours par un $ en PHP.
+
+On peut utiliser la superglobale $_SERVER pour recup des infos sur l'agent visitant la page web.
+
+Voici un exemple:
+
+<?php
+echo $_SERVER['HTTP_USER_AGENT'];
+?>
+
+Peut donner:
+
+Mozilla/5.0 (Linux) Firefox/112.0
+
+Autre exemple, qui affiche 'Vous utilisez Firefox' si 'Firefox' est présent dans la superglobale:
+
+<?php
+if (str_contains($_SERVER['HTTP_USER_AGENT'], 'Firefox')) {
+    echo 'Vous utilisez Firefox.';
+}
+?>
+
+Autre exemple, affiche infos systèmes:
+
+<?php phpinfo(); ?>
+
+On peut également mélanger le mode PHP et HTML, exemple:
+
+<?php
+if (str_contains($_SERVER['HTTP_USER_AGENT'], 'Firefox')) {
+?>
+<h3>str_contains() a retourné true</h3>
+<p>Vous utilisez Firefox</p>
+<?php
+} else {
+?>
+<h3>str_contains() a retourné false</h3>
+<p>Vous n'utilisez pas Firefox</p>
+<?php
+}
+?>
+
+Peut retourner:
+
+<h3>str_contains() a retourné true</h3>
+<p>Vous utilisez Firefox</p>
+
+Au lieu d'utiliser echo pour 'output" qqch, on utilise du pur HTML.
+
+==
+
+-- Utiliser un formulaire --
+
+Point fort PHP = capacité à gérer les formulaires
+
+Exemple:
+
+<form action="action.php" method="post">
+   <label>Votre nom :</label>
+   <input name="nom" id="nom" type="text" />
+
+   <label>Votre âge :</label>
+   <input name="age" id="age" type="number" /></p>
+
+   <button type="submit">Valider</button>
+</form>
+
+On récupère les valeurs:
+
+Bonjour, <?php echo htmlspecialchars($_POST['nom']); ?>.
+Tu as <?php echo (int) $_POST['age']; ?> ans.
+
+Peut afficher:
+
+Bonjour Jean.
+Tu as 29 ans.
+
+Voir https://www.php.net/manual/fr/language.variables.external.php
+
+htmlspecialchars() s'assure que tous les caractères spéciaux HTML sont proprement encodés afin d'éviter des injections de balises 
+HTML et de Javascript dans vos pages
+
+(int) converti l'âge en entier (peut aussi demander à PHP de la faire autom.ement avec l'extens. filter)
+
+Variables $_POST['nom'] et $_POST['age'] = autom.ement créés par PHP
+
+$_POST contient les données envoyées par la méthode POST.
+Dans notre formulaire on a mis method="post" mais si on aurait choisi get, ses valeurs auraient été dans $_GET, une autre
+superglobale.
+
+[!] Points & espaces dans noms de variables = convertis en _
+Exemple: <input name="a.b" /> deviendra $_REQUEST['a_b'];
+
+Peut aussi util. $_REQUEST si on ne veux pas s'embêter avec la méthode employée.
+Elle contient mélange des données de GET,POST,COOKIE et FILE
+
+==
+
+Echappement avec conditions:
+
+<?php if ($expression == true): ?>
+  Ceci sera affiché si l'expression est vrai.
+<?php else: ?>
+  Sinon, ceci sera affiché.
+<?php endif; ?>
+
+[!] Doit util. la balise PHP standard <?php et ?> si intégré dans document XML ou XHTML pour rester conforme aux standards
+
+==
+
+Si le nom d'une valeur externe commence par une syntaxe d'array valide, les caractères suivants sont ignorés
+Ex: <input name="foo[bar]baz"> devient $_REQUEST['foo']['bar']
+
+==
+
+-- Reception de type="image" formulaire --
+
+Dans un formulaire on peut trouver:
+
+<input type="image" src="image.gif" name="sub" />
+
+Quand l'user clique dessus, le form est envoyé avec deux variables en plus: sub_x et sub_y, qui contiennent les coords de
+l'endroit dans l'image ou l'user a cliquer. (Le vrai nom des variables envoyées par le navigateur est sub.x, sub.y mais PHP
+converti comme dis auparavant)
+
+==
+
+-- Cookies HTTP --
+
+PHP gère les cookies tels définis par RFC 6265
+Pour set un cookie:
+
+	setcookie()
+
+Cookies = font partie de l'en-tête HTTP, donc doit appeller setcookie avant tout 'output' au navigateur
+même restriction que pour la fonc. header()
+Données cookies sont ensuite dispo dans les arrays appropriés comme $_COOKIE, $_REQUEST. Voir page manuel setcookie() pour détails
+
+Pour assigner plusieurs variables à un seul cookie, peut l'assigner comme si c'était un array:
+
+<?php
+  setcookie("MyCookie[foo]", 'Testing 1', time()+3600);
+  setcookie("MyCookie[bar]", 'Testing 2', time()+3600);
+?>
+
+ça crée deux cookies distincts bien que MyCookie n'est maintenant qu'un seul array dans mon script.
+Si on veut juste mettre plusieurs val. au sein d'un cookie on peut utiliser serialize() ou explode() sur la valeur avant.
+
+Un cookie va remplacer un cookie précédent du même nom dans le navigateur sauf si le chemin 'path'/domaine 'domain' est différent
+
+Donc pour un 'shopping cart' on le prendrai en compte:
+
+<?php
+if (isset($_COOKIE['count'])) {
+    $count = $_COOKIE['count'] + 1;
+} else {
+    $count = 1;
+}
+setcookie('count', $count, time()+3600);
+setcookie("Cart[$count]", $item, time()+3600);
+?>
+
+==
+
+-- Les points dans les noms de variables --
+
+Si je tente:
+
+<?php
+$varname.ext;  /* invalid variable name */
+?>
+
+Le parser voit $varname puis l'opérateur de concaténation de chaîne de caractères ., puis une chaîne de caractère nue 'ext'.
+Les . sont donc invalides pour les noms de variables.
+
+==
+
+-- Déterminer les types de données --
+
+PHP -> typage dynamique, conversions implicites, donc souvent pas évident de quel type une variable est
+Pour pallier à ça PHP fournis des fonctions pour trouver le type, comme:
+	- gettype(),
+	- is_array(),
+	- is_float(),
+	- is_int(),
+	- is_object(),
+	- is_string()
+
+HTTP = protocole basé sur du texte, donc la pluspart/tout le contenu venant des arrays superglobaux comme $_POST, $_GET, restent
+des chaînes de caractères (PHP ne va pas tenter de les convertir)
+
+Exemple, pour:
+
+	/index.php?var1=null&var2=123
+
+$_GET["var1"] contiendra la chaîne "null", $_GET["var2"], la chaîne "123"

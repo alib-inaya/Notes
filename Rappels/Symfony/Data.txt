@@ -17,7 +17,7 @@ Je génère sur mon code des entités avec les repository associés avec:
 J'applique ensuite ces entités à la base de donnée avec:
 
 	symfony console make:migration
-	symfony consoler doctrine:migrations:migrate
+	symfony console doctrine:migrations:migrate
 
 ==
 

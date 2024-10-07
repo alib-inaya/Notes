@@ -1,0 +1,1075 @@
+
+Toute expression PHP possède un de ces types intégrés à PHP selon sa valeur:
+	- null
+	- bool
+	- int
+	- float
+	- string
+	- array
+	- object
+	- callable
+	- resource
+
+PHP = typage dynamique mais peut statiquement typer certains aspects via les déclarations de types
+Types = restreignent le genre d'opérations pouvant être appliquées sur eux
+Si expression/variable utilisée dans une opération que son type ne supporte pas, PHP va essayer de "type juggle" la valeur
+en un type qui supporte l'opération.
+Ce processus -> dépend du contexte dans lequel la valeur est utilisée.
+
+Peut forcer une expression à être évaluée à un certain type avec le casting de type 'type cast'.
+Peut aussi changer le type d'une variable en place avec la fonction settype()
+
+Pour voir la valeur & le type d'une expression, on utilise var_dump()
+Pour recup le type d'une expression, get_debug_type()
+Pour vérif si une expression est d'un type, is_<type>()
+
+<?php
+$a_bool = true;   // a bool
+$a_str  = "foo";  // a string
+$a_str2 = 'foo';  // a string
+$an_int = 12;     // an int
+
+echo get_debug_type($a_bool), "\n";
+echo get_debug_type($a_str), "\n";
+
+// If this is an integer, increment it by four
+if (is_int($an_int)) {
+    $an_int += 4;
+}
+var_dump($an_int);
+
+// If $a_bool is a string, print it out
+if (is_string($a_bool)) {
+    echo "String: $a_bool";
+}
+?>
+
+Affiche:
+
+bool
+string
+int(16)
+
+[!] Avant PHP 8.0.0, get_debug_type() = pas dispo, utiliser gettype(), mais elle ne renvoie pas les noms de types canoniques
+
+==
+
+-- Type System --
+
+PHP -> système de type nominal av. relation sous-typage comportementale forte
+Relation sous-typage = vérif à la compilation, vérif des types = vérifiée au runtime
+
+Système type PHP supporte plusieurs types atomiques qui peuvent être composés pour créer types plus complexes
+Certains de ces types peuvent être écrits sous forme de déclaration de type
+
+-- Types atomiques --
+
+Certains types atom.es = types intégrés au langage & peuvent pas être reproduits av. types définis par l'utilisateur
+
+Liste des types de base:
+
+	- Types intégrés:
+		- Type null
+		- Types scalaires:
+			- Type bool
+			- Type int
+			- Type float
+			- Type string
+
+		- Type array
+		- Type object
+		- Type resource
+		- Type never
+		- Type void
+		- Types de classes relatives: self, parent et static
+
+	- Types de valeur:
+		- false
+		- true
+
+	- Types définis par l'utilisateur (génér.ment appelés classes-types)
+		- Interfaces
+		- Classes
+		- Énumérations
+
+	- Type callable
+
+==
+
+-- Types composites --
+
+Peut combiner les types, soit:
+	- Intersection de classes-types (interfaces & noms de classes)
+	- Union de types
+
+-- Intersection de types --
+
+Type d'intersection accepte des valeurs qui satisfont plusieurs déclarations de type de classe, plutôt qu'une
+Les types individuels qui composent l'intersection sont liés par le symbole &
+Exemple:
+	T&U&V est le type d'intersection composé des type T, U et V.
+
+-- Types d'union --
+
+Type union accepte des valeurs de plusieurs types diff. plutôt qu'un seul
+Types individuels formant le type = reliés par le symbole |
+Exemple:
+	T|U|V est le type d'union de T, U et V.
+Autre exemple:
+	T|(X&Y)
+
+-- Alias de type --
+
+PHP supporte deux alias de type: mixed et iterable.
+	mixed correspond au type d'union: object|resource|array|string|float|int|bool|null
+	iterable à: Traversable|array
+
+[!] Dans PHP pas d'alias de type définis par l'utilisateur
+
+==
+
+-- NULL --
+
+Type null = le type unité de PHP, c.à.d il a une seule valeur: null
+Variables non définies & variables unset() auront la valeur null.
+
+Une seule valeur de type null: c'est la constante insensible à la casse null.
+
+<?php
+$var = NULL;
+?>
+
+==
+
+-- Boolean --
+
+Le type bool = possède que deux valeurs & est utilisé pour exprimer vérité. Soit true, soit false
+Spécifier un bool = avec true ou false, insensibles à la classe
+<?php
+$foo = true;
+?>
+
+Peut cast (bool) pour convertir explicitement en bool.
+Qd une valeur = utilisé dans contexte logique = autom.ent interp.étée comme bool. Voir Type Juggling.
+
+Valeurs suivantes sont considérées false:
+	- booléen false
+	- entier 0
+	- flottante 0.0 et -0.0
+	- Chaîne vide "" et chaîne "0"
+	- tableau avec aucun élement
+	- type unité NULL
+	- objets internes surchargant leur comportement de casting en booléen. Ex: les objets SimpleXML créés à partir
+	d'éléments vides sans attributs
+
+Toutes autre valeurs = considérées true (y compris ressources, NaN, -1)
+
+==
+
+-- Le entiers --
+
+Peuvent êtres spécifiés dans plusieurs bases
+Pour la base/notation octale: précéder le nombre d'un 0 (zéro), ou alors 0o, ou bien 0O.
+Dès PHP 7.4.0, les entiers peuvent contenir des _ entre leurs chiffres pour une meilleure lisibilité. Ils sont suppr. autom.
+par le scanner de PHP.
+
+Ex:
+
+<?php
+$a = 1234; // un nombre décimal
+$a = 0123; // un nombre octal (équivalent à 83 en décimal)
+$a = 0o123; // un nombre octal (à partir de PHP 8.1.0)
+$a = 0x1A; // un nombre hexadecimal (équivalent à 26 en décimal)
+$a = 0b11111111; // un nombre binaire (équivalent à 255 en decimal)
+$a = 1_234_567; // un nombre décimal (à partir de PHP 7.4.0)
+?>
+
+Taille de l'entier = dépend de la plate-forme. Valeur max de ~2 milliard = habituelle (corresp. à 32 bits signés)
+Plateformes 64-bit ont une val. de ~9E18, d'habitude.
+PHP supporte pas les entiers non signés.
+Taille d'un entier = dans la constante PHP_INT_SIZE.
+Valeur max = PHP_INT_MAX.
+Valeur minimale = PHP_INT_MIN.
+
+==
+
+-- Débordement d'entier --
+
+Si PHP rencontre nombre supérieur au max d'un entier, sera interprété comme nombre décimal.
+Opération qui résulte en un nombre dehors du "range" des entiers retournera un décimal.
+
+-- Division d'entier --
+
+Pas d'opérateur division d'entier en PHP
+utiliser fonction intdiv(), produit un décimal (peut le transtyper en entier pour l'arrondir vers zéro ou en utilisant la
+fonction round() pour un contrôle sur la façon dont il est arrondi)
+
+-- Conversion en entier --
+
+Une valeur sera implicitement convertie si un opérateur, une fonction ou une structure de contrôle demande un entier en
+guise d'argument. Peut aussi converir en un entier avec intval() ou cast (int), (integer)
+
+Si un objet de type ressource est converti en entier, le résultat sera l'identifiant unique de la ressource assigné par PHP
+à l'exéc.
+
+Conversion booléen en entier:
+	false donne 0
+	true donne 1
+
+Conversion flottante en entier:
+	Nombre = arrondis vers 0.
+	A partir de PHP 8.1.0, notif. de dépréciation émise lors
+	conversion implicite nombre décimal non-intégral vers entier perdant en précision
+
+<?php
+
+function foo($value): int {
+  return $value;
+}
+
+var_dump(foo(8.1)); // "Deprecated: Implicit conversion from float 8.1 to int loses precision" à partir de PHP 8.1.0
+var_dump(foo(8.1)); // Avant PHP 8.1.0
+var_dump(foo(8.0)); // 8 dans les deux cas
+
+var_dump((int) 8.1); // 8 dans les deux cas
+var_dump(intval(8.1)); // 8 dans les deux cas
+?>
+
+Si nombre float est au delà des limites des entiers, alors résultat indéfini. Aucune alerte n'est émise quand ça arrive
+
+NaN, Infinity et -Inf = 0 lors conversion en entier.
+
+Jamais convertir fraction inconnue en un entier, peut donner résultats inattendus:
+
+<?php
+echo (int) ( (0.1+0.7) * 10 ); // Affiche 7 !
+?>
+
+Conversion chaîne de caractères en entier:
+Si elle est numérique, alors elle sera transformée en sa valeur entière corresp.
+Sinon, zéro (0).
+
+Conversion null en entier:
+Zéro (0).
+
+==
+
+-- Nombres à virgules flottantes --
+
+peuvent être spécifiés avec ces syntaxes:
+
+<?php
+$a = 1.234;
+$b = 1.2e3;
+$c = 7E-10;
+$d = 1_234.567; // à partir de PHP 7.4.0
+?>
+
+Taille nombre décimal = dépend plate-forme
+Valeur commune (format 64 bits IEEE) = max 1.8e308, précision sur 14 chiffres
+
+[!] Nombre flottants = précision limité
+PHP utilise format de précision des décimaux IEEE 754, qui donnera une erreur maxi relative de l'ordre de 1.11e-16 à cause des
+arrondis
+Opération artihm. non-élémentaires peuvent donner erreurs plus importantes
+Nombres rationnels exactement représentables en base 10 comme 0.1 ou 0.7 n'ont pas de repres. exacte comme flottante en base 2
+utilisée en interne, qq soit la taille de la mantisse. Donc peuvent pas être converis sans petite perte de précision
+ex: floor((0.1+0.7)*10)  retournera 7 au lieu du 8 attendu, pk la repres. interne serra qqch comme 7.9999999...
+Donc jamais faire confiance aux derniers chiffres d'une flottante, jamais comparer l'égalité de 2 nombres flottants directement
+Si plus grande précision nécessaire, fonctions mathématique de précision arbitraire & fonctions gmp sont dispos
+
+==
+
+-- Convertir en un nombre flottant --
+
+Depuis chaînes de caractères:
+	Si chaine = numérique ou numérique de tête alors elle sera transformée en sa val. flottante corresp., sinon convertie
+	à zéro
+
+Pour les autres types:
+	Conversion effectuée en premier en int, puis en float
+
+-- Comparaison de nbs. flottants --
+
+Test égalité val. flottantes = problématique, mais diff façons de comparer
+Peut utiliser une borne supérieure à l'erreur relative à l'arrondi
+Cette valeur = connue étant l'epsilon de la machine ou le 'unit roundoff', et est la diff. la plus petite acceptable dans les
+calculs
+
+<?php
+$a = 1.23456789;
+$b = 1.23456780;
+$epsilon = 0.00001;
+
+if(abs($a-$b) < $epsilon) {
+    echo "true";
+}
+?>
+
+-- NaN --
+
+NaN = val. indéfinie ou non représentable
+Toute comparaison avec NaN (sauf si c'est avec elle même) donnera false
+NAN représ. tout nombre de val. différente, donc doit pas être comparé à d'autres valeurs, y compris cette constante elle même
+Doit pas comparer NaN, mais a la place utiliser is_nan()
+
+==
+
+-- Les chaînes de caractères --
+
+Chaîne de car. = série de caract., 1 caractère = 1 octet
+PHP supporte que les jeux de caractères avec 256 caract.s differents donc pas de support natif pour l'Unicode
+Sur les syst. 32 bits, une string peut aller jusqu'à 2Go (2147483647 octets max)
+
+-- Syntaxe --
+
+4 façons de spécifier une chaîne de caractères:
+	Guillemets simples ''
+	Guillemets doubles ""
+	Syntaxe Heredoc
+	Syntaxe Nowdow
+
+-- Guillemets simples --
+
+Pour mettre un ' dans un string de cette syntaxe, il doit être précédé d'un \
+Pour mettre un \, on fait \\
+Toutes les autres instances de \ seront ajoutées au string telles quelles (comme \r, \n, etc ...)
+
+[!] Contrairem.nt aux syntxes double guillemets & heredoc, ici les variables & séquences d'échappement pour caractères spéciaux ne sont pas interprétés
+
+<?php
+echo 'ceci est une chaîne simple';
+
+echo 'Vous pouvez également ajouter des nouvelles lignes
+dans vos chaînes
+de cette façon';
+
+// Affiche : Arnold a dit : "I'll be back"
+echo 'Arnold a dit : "I\'ll be back"';
+
+// Affiche : Voulez-vous supprimer C:\*.*?
+echo 'Voulez-vous supprimer C:\\*.*?';
+
+// Affiche : Voulez-vous supprimer C:\*.*?
+echo 'Voulez-vous supprimer C:\*.*?';
+
+// Affiche : Ceci n'affichera pas \n de nouvelle ligne
+echo 'Ceci n\'affichera pas \n de nouvelle ligne';
+
+// Affiche : Les variables ne seront pas $traitees $ici
+echo 'Les variables ne seront pas $traitees $ici';
+?>
+
+-- Guillemets doubles --
+
+Si chaîne de caractères entourée guillemets doubles "", alors PHP va interpréter les séquences d'échappement suivantes pour caractères spéciaux:
+
+\n	Fin de ligne (LF ou 0x0A (10) en ASCII)
+\r	Retour à la ligne (CR ou 0x0D (13) en ASCII)
+\t	Tabulation horizontale (HT or 0x09 (9) en ASCII)
+\v	Tabulation verticale (VT ou 0x0B (11) en ASCII)
+\e	échappement (ESC or 0x1B (27) en ASCII)
+\f	Saut de page (FF ou 0x0C (12) en ASCII)
+\\	Antislash
+\$	Signe dollar
+\"	Guillemet double
+\[0-7]{1,3}	Octal: la séquence de caractères correspondant à l'expression rationnelle [0-7]{1,3} est un caractère en notation octale (par example "\101" === "A"), qui débordera silencieusement pour s'adapter à un octet (par example "\400" === "\000")
+\x[0-9A-Fa-f]{1,2}	Hexadécimal: la séquence de caractères correspondant à l'expression rationnelle [0-9A-Fa-f]{1,2} est un caractère en notation hexadécimale (par example "\x41" === "A")
+\u{[0-9A-Fa-f]+}	Unicode: la séquence de caractères correspondant à l'expression rationnelle [0-9A-Fa-f]+ est un point de code Unicode, qui sera la sortie de la chaîne de caractères représentant ce point de code UTF-8. Les accolades sont requis dans la séquence. Par example "\u{41}" === "A"
+
+Fonctionnalité intéressante chaîne caractères guillemets doubles = noms de variables sont interprétés
+
+-- Syntaxe Heredoc "Here document" --
+
+Troisième façon = syntaxe Heredoc: <<<
+Après <<<, un identifiant est fourni suivi d'une nouvelle ligne
+La chaîne de caractères elle même vient ensuite, suivi du même identifiant pour fermer la notation
+
+Identif. de fin peut être indenté par espaces/tabs, au quel cas l'identiation = retirée de toutes les lignes dans la chaîne
+de caractères doc. A PHP <7.3.0, l'identifiant de fin doit commencer à la première colonne de la ligne
+
+Identif. doit suivre mm règles que tout libellé 'label' PHP: que car. alphanum & underscores & doit commencer par car.
+non-num ou underscore.
+
+Ex:
+
+<?php
+// no indentation
+echo <<<END
+      a
+     b
+    c
+\n
+END;
+
+// 4 spaces of indentation
+echo <<<END
+      a
+     b
+    c
+    END;
+
+Va afficher:
+
+      a
+     b
+    c
+
+  a
+ b
+c
+
+Exemple 2, identifiant de fermeture doit pas être identité plus loin que toute ligne du corps:
+
+<?php
+echo <<<END
+  a
+ b
+c
+   END;
+
+Donne l'erreur:
+
+PHP Parse error:  Invalid body indentation level (expecting an indentation level of at least 3) in example.php on line 4
+
+Peut indenter l'identifiant de fin avec tabulations ou espace mais pas mélanger les deux, sinon ParseError (pour lisibilité)
+
+Pas obligé de mettre; direct après l'id de fin depuis PHP 7.3.0, ex, je peux déclare un array comme ça:
+
+<?php
+$values = [<<<END
+a
+  b
+    c
+END, 'd e f'];
+var_dump($values);
+
+Donnera:
+
+array(2) {
+  [0] =>
+  string(11) "a
+  b
+    c"
+  [1] =>
+  string(5) "d e f"
+}
+
+[!] Pour PHP <7.3.0, l'id de fin doit avoir usr la ligne aucune autre caractère sauf ; donc peut même pas être indenté, sinon
+erreur
+Heredoc = comme string déclarée avec "", mais sans utiliser "". Donc les "" dans la syntaxe Heredoc = pas besoin d'être échappés
+mais codes d'échappement listés en haut s'appliquent tjrs
+Variables seront interprétées, mais doit prendre même precautions qd vars. complexes sont exprimées
+
+Exemple:
+
+echo <<<EOT
+Mon nom est "$name". J'affiche quelques $foo->foo.
+Maintenant, j'affiche quelques {$foo->bar[1]}.
+Et ceci devrait afficher un 'A' majuscule : \x41
+EOT;
+?>
+
+Va afficher:
+
+Maintenant, j'affiche quelques Bar2.
+Et ceci devrait afficher un 'A' majuscule : A
+
+Pour Heredoc, on peut aussi mettre l'identifiant de début entre double guillemets.
+
+$str = <<<"IDENTIFIANT"
+[...]
+IDENTIFIANT;
+
+-- Syntaxe Nowdoc --
+
+La syntaxe Nowdoc est aux simples guillemets ce que Heredoc est au double guillemets. La syntaxe Nowdoc est comme Heredoc, mais
+on ajoute des simples guillemets qui entourent l'identifiant au début:
+
+$str = <<<'IDENTIFIANT'
+[...]
+IDENTIFIANT;
+
+Aucune analyse est faite au sein du Nowdoc (caractères spéciaux, variables ...)
+Syntaxe idéale pour embarquer du code PHP/autres larges blocs de texte sans avoir à échapper.
+Elle est comme la syntaxe SGML <![CDATA[ ]]>, elle déclare un bloc de texte ne devant pas être analysé.
+
+Exemple:
+
+<?php
+echo <<<'EOD'
+Exemple de chaîne sur plusieurs lignes en utilisant la syntaxe Nowdoc.
+Les barre oblique inversée sont toujours traité de façon littérale,
+par exemple \\ and \'.
+EOD;
+
+Affichera:
+
+Exemple de chaîne sur plusieurs lignes en utilisant la syntaxe Nowdoc.
+Les barre oblique inversée sont toujours traité de façon littérale,
+par exemple \\ and \'.
+
+-- Analyse des variables --
+
+Qd chaîne car. guillemets doubles/Heredoc, les variables dedans sont interprétées
+
+2 syntaxes analyse variables:
+	- simple, et
+	- complexe
+
+Simple = commune & pratique, façon d'embarquer variable, valeur de tableau, propriété objet dans une chaîne de car.
+Complexe = utilise accolades autour de son expression
+
+Exemple syntaxe simple:
+
+<?php
+$juice = "pomme";
+
+echo "Il a bu du jus de $juice." . PHP_EOL;
+
+// Non souhaité. "s" est un caractère valide pour un nom de variable, ainsi ceci fait référence à $juices, et non à $juice.
+echo "Il a bu du jus constitué de $juices." . PHP_EOL;
+// Spécifiez explicitement la fin du nom de la variable en plaçant la référence entre accolades.
+echo "Il a bu du jus constitué de ${juice}s.";
+
+?>
+
+Affiche:
+
+Il a bu du jus de pomme.
+Il a bu du jus constitué de .
+Il a bu du jus constitué de pommes.
+
+Depuis PHP 7.1.0, les indices numériques négatifs = aussi supportés, ex:
+
+echo "Le personnage à l'index -2 est $string[-2].", PHP_EOL;
+
+-- Syntaxe complexe --
+
+Permet l'utilisation d'expressions complexe
+On l'utilise en entourant variable scalaire, élém. tableau, attribut objet de {}
+{} peut pas être échappé, syntaxe reconnue que si y'a $ dedans, exemple: 
+
+	$str = "Hello, {$personal_data->name}!";
+
+On utilise {\$ pour y échapper & afficher littéralement {$
+
+Exemples:
+
+<?php
+// Montre toutes les erreurs
+error_reporting(E_ALL);
+
+$great = 'fantastic';
+
+// Ne fonctionne pas, affiche : This is { fantastic}
+echo "This is { $great}";
+
+// Fonctionne, affiche : This is fantastic
+echo "This is {$great}";
+
+// Fonctionne
+echo "This square is {$square->width}00 centimeters broad."; 
+
+// Fonctionne, les clés entourées de guillemets simples ne fonctionnent qu'avec la syntaxe à accolades
+echo "This works: {$arr['key']}";
+
+// Fonctionne
+echo "This works: {$arr[4][3]}";
+
+// Ceci est faux pour la même raison pour laquelle $foo[bar] est faux à l'extérieur d'une chaîne.
+// PHP recherche d'abord une constante nommée foo et génère une erreur si elle n'est pas trouvée.
+// Si la constante est trouvée, sa valeur (et non 'foo' elle-même) serait utilisée
+// comme indice de tableau.
+echo "This is wrong: {$arr[foo][3]}"; 
+
+// Fonctionne. Lors de l'utilisation de tableaux multidimensionnels, utilisez toujours
+// les accolades autour du tableau lorsqu'il se trouve dans la chaîne
+echo "This works: {$arr['foo'][3]}";
+
+// Fonctionne.
+echo "This works: " . $arr['foo'][3];
+
+echo "This works too: {$obj->values[3]->name}";
+
+echo "This is the value of the var named $name: {${$name}}";
+
+echo "This is the value of the var named by the return value of getName(): {${getName()}}";
+
+echo "This is the value of the var named by the return value of \$object->getName(): {${$object->getName()}}";
+
+// Ne fonctionne pas, affiche : This is the return value of getName(): {getName()}
+echo "This is the return value of getName(): {getName()}";
+
+// Ne fonctionne pas, affiche : C:\folder\{fantastic}.txt
+echo "C:\folder\{$great}.txt"
+// fonctionne, affiche : C:\folder\fantastic.txt
+echo "C:\\folder\\{$great}.txt"
+?>
+
+Possible d'accéder aux propriétés de classes en util. des variables contenues dans des chaînes, avec cette syntaxe:
+
+<?php
+class foo {
+    var $bar = 'I am bar.';
+}
+
+$foo = new foo();
+$bar = 'bar';
+$baz = array('foo', 'bar', 'baz', 'quux');
+echo "{$foo->$bar}\n";
+echo "{$foo->{$baz[1]}}\n";
+?>
+
+Affiche:
+
+I am bar.
+I am bar.
+
+Autre exemple:
+
+<?php
+// Affichage de toutes les erreurs.
+error_reporting(E_ALL);
+
+class beers {
+    const softdrink = 'rootbeer';
+    public static $ale = 'ipa';
+}
+
+$rootbeer = 'A & W';
+$ipa = 'Alexander Keith\'s';
+
+// Ceci fonctionne ; Affiche : I'd like an A & W
+echo "I'd like an {${beers::softdrink}}\n";
+
+// Ceci fonctionne également ; Affiche : I'd like an Alexander Keith's
+echo "I'd like an {${beers::$ale}}\n";
+?>
+
+[!] Accéder à des variables de types autres que les tableaux ou des objets implémentant les interface appropriés avec [] ou {}
+retournera silencieusement null.
+
+==
+
+-- Fonctions & opérateurs chaîne de caractère --
+
+Y'en a deux:
+	. qui concatène deux chaines, exemple: $str = $str1.$str2;
+	.= qui concatène et assigne. Exemple: $str .= $str1; // $str vaudra $str.$str1
+
+Existe fonctions de chaîne de caractères, et fonctions expressions régulières compatibles Perl (fonctionnalité recherches & remplacements avancés)
+Existe aussi fonctions pour les URL, fonctions pour chiffrer/déchiffrer chaînes de caractère (Sodium et Hash)
+Voir aussi fonctions "type de caractères"
+
+-- Conversion en chaîne de caractères --
+
+Peut converir valeur en string avec le cast (string) ou le fonc. strval()
+
+un bool true = convertii en "1", et false en "" (chaîne vide)
+entier/décimale = convertie en chaîne représentante le nombre textuellement, y compris av. notation exponentielle 
+comme 4.1E+6
+Dès PHP 8.0.0 le pt décimal est tjrs un point ., avant ça dépendait de la locale du script (catégorie LC_NUMERIC) voir la fonc
+setlocale()
+array = tjrs converti en "Array"
+objet = dépend, doit implémenter la méthode magique __toString dedans
+ressources = tjrs converti en chaîne de forme "Resource id #1" avec 1 l'id de la ressource assigné par PHP lors exécution
+Pour récup type d'une ressource: get_resource_type()
+null = tjrs converti en "" (chaîne vide)
+
+utiliser print_r() et var_dump() au lieu de convertir tableau, objets, ressources en chaînes de caractères si on veux les examiner
+
+La pluspart des valeurs en PHP peuvent être converties en chaînes de caractères pour les stocker.
+Ca s'appelle "sérialisation" et on le fait via serialize() (lié à la méthode magique __serialize())
+
+-- Détails --
+
+Type string = implémenté en PHP en tant que tableau d'octets & entier indiquant la longueur. N'a aucune info sur la façon 
+d'interpreter les octets: au programmeur de le faire.
+
+Strings = prennent la place de tableaux de bytes en PHP. Données arbitraires (bytes) en PHP = représentées par des strings, par
+ex. les données lues depuis un socket réseau retournent chaînes de caractères.
+
+Les chaînes de caractères sont encodées selon l'encodage du script, sauf si Zend Multibyte est actif: dans ce cas le script
+peut être écrit dans n'imp. quel encodage (explicitement déclaré ou détécté), avant d'être converti en un encodage interne
+ensuite utilisé pour les chaînes. Contraintes existent concernant cet encode: l'encodage employé par les scripts doivent
+être compatible ASCII.
+
+Doit faire attention aux fonctions qui s'appliquent aux chaînes de caractères qu'on utilise: certains peuvent faire
+de mauvaises hypotèses conçernant l'encodage employé
+
+-- Chaînes numérique --
+
+En PHP, chaîne de caractères est "numérique" si elle peut être interprétée comme int ou float
+Chaînes débutant numériquement = chaîne qui commence comme chaîne numérique puis n'imp. quel caractères
+
+[!] Chaines contenant la lettre E (insensible à la casse) délimite par nombres = considérée comme nb. exprimé en notation
+scientifique
+
+<?php
+var_dump("0D1" == "000"); // false, "0D1" is not scientific notation
+var_dump("0E1" == "000"); // true, "0E1" is 0 * (10 ^ 1), or 0
+var_dump("2E1" == "020"); // true, "2E1" is 2 * (10 ^ 1), or 20
+?>
+
+-- Chaînes de caractères utilisés dans des contextes numériques --
+
+Quand string doit être évalué comme nombre (opératins arithm, déclaration int, ...), étapes suivantes:
+	- Si la string est numérique, résolue en int si elle repres. un int & entre dans les limites du type int, sinn résolue
+	en float
+	- Si le ctxte autorite chaîne débutant num.ement et que la str.ng en est une, alors elle est résolue en int si la partie
+	initiale de la chaîne str est uen chaîne numérique entière & entre dans les lim. du type int, sinon résolue en float
+	et erreur de niv. E_WARNING soulevée
+	- Si la str. pas numérique, TypeError lancé
+
+-- Comportement antérieur à PHP 8.0.0 --
+
+Avant PHP 8.0.0, string = considéré numérique que si espaces blancs au début
+si espaces = à la fin, considérée comme chaîne débutant numériquement 
+Avant PHP 8.0.0, qd string util.sé dans ctxte numérique, effectuait les mêmes étapes citées au dessus, mais avec
+diffs:
+	- string débutant numériquement générait erreurs E_NOTICE au lieu de E_WARNING
+	- si string était pas numérique, erreur E_WARNING levée & valeur 0 retournée
+
+Avant PHP 7.1.0 ni E_NOTICE ni E_WARNING levées
+
+<?php
+$foo = 1 + "10.5";                // $foo is float (11.5)
+$foo = 1 + "-1.3e3";              // $foo is float (-1299)
+$foo = 1 + "bob-1.3e3";           // TypeError as of PHP 8.0.0, $foo is integer (1) previously
+$foo = 1 + "bob3";                // TypeError as of PHP 8.0.0, $foo is integer (1) previously
+$foo = 1 + "10 Small Pigs";       // $foo is integer (11) and an E_WARNING is raised in PHP 8.0.0, E_NOTICE previously
+$foo = 4 + "10.2 Little Piggies"; // $foo is float (14.2) and an E_WARNING is raised in PHP 8.0.0, E_NOTICE previously
+$foo = "10.0 pigs " + 1;          // $foo is float (11) and an E_WARNING is raised in PHP 8.0.0, E_NOTICE previously
+$foo = "10.0 pigs " + 1.0;        // $foo is float (11) and an E_WARNING is raised in PHP 8.0.0, E_NOTICE previously
+?>
+
+-- Tableaux en PHP --
+
+Associent clées à valeurs.
+Peuvent être considérés comme tableau, liste, table de hachage, dictionnaire, collection, pile, file d'attente, et plus.
+Tableau peu contenir d'autres tableaux (multidimensionnels ou non)
+
+Déclare tableau av. array()
+Exemple:
+
+array(
+    key  => value,
+    key2 => value2,
+    key3 => value3,
+    ...
+)
+
+[!] Une syntaxe de tableau courte existe qui remplace array() par [].
+
+<?php
+$array = array(
+    "foo" => "bar",
+    "bar" => "foo",
+);
+
+// Utilisant la syntaxe de tableau courte
+$array = [
+    "foo" => "bar",
+    "bar" => "foo",
+];
+?>
+
+Clé tableau: soit int, soit string
+Value peut être n'imp quel type
+
+==
+
+-- Les ressources --
+
+Ressource = variable spéciale contenant ref. vers ressource externe
+Elles sont crées & utilisées par des fonct.n spéciales
+
+Ressource représente fichier ouvert, connexion à la base de donnée, image ...
+Conversion de type en une ressource n'a pas de sens
+
+Ressources = libérés par le garbage collector qui en supprime une dès qu'elle n'a plus de référence.
+Grâce au système de compteur de référence du Zend Engine.
+Connexions persistantes aux DB = exceptions à cette règle. Sont pas détruites par le GC
+
+-- Les fonctions de rappel / Types Callable --
+
+callable = fonctions de rappel définies par l'util.isateur
+certains fonctions comme call_user_func() et usort() les acceptent comme paramètres
+callable = peuvent être fonctions, méthodes d'objets, méthodes statiques de classe
+
+On passe un callable par une string: son nom. Toute fonc. interne ou déf. par l'utilisateur peut être utilisée, sauf
+constructions du langage PHP comme array(), echo, empty(), eval(), exit(), isset(), list(), print, unset()
+
+Méthode d'un objet = passée comme callable via un tableau contenant l'objet en question à l'index 0 et le nom de la méthode à
+l'index 1
+Accéder aux méthodes protégées & privées d'une classe = autorisé
+
+Méthodes statiques = passées sans instancier d'objet soit en passant le nom de la classe dans l'index 0 puis nom de méthode en 1, soit
+en passant juste la chaîne 'NomDeLaClasse::NomDeLaMethode'
+
+Fonc. anonyme & fonc. fléchées peuvent ausis être passées comme param. de type callback
+
+[!] Dès PHP 8.1.0, fonctions anonymes peuvent être crées en utilisant la 'first class sallable syntax' syntaxe callable de 
+première classe
+
+En gen. tout objet implém. __invoke() peut être passé comme paramètre callback
+
+Exemple:
+
+<?php
+
+// An example callback function
+function my_callback_function() {
+    echo 'hello world!';
+}
+
+// An example callback method
+class MyClass {
+    static function myCallbackMethod() {
+        echo 'Hello World!';
+    }
+}
+
+// Type 1: Simple callback
+call_user_func('my_callback_function');
+
+// Type 2: Static class method call
+call_user_func(array('MyClass', 'myCallbackMethod'));
+
+// Type 3: Object method call
+$obj = new MyClass();
+call_user_func(array($obj, 'myCallbackMethod'));
+
+// Type 4: Static class method call
+call_user_func('MyClass::myCallbackMethod');
+
+// Type 5: Relative static class method call
+class A {
+    public static function who() {
+        echo "A\n";
+    }
+}
+
+class B extends A {
+    public static function who() {
+        echo "B\n";
+    }
+}
+
+call_user_func(array('B', 'parent::who')); // A, deprecated as of PHP 8.2.0
+
+// Type 6: Objects implementing __invoke can be used as callables
+class C {
+    public function __invoke($name) {
+        echo 'Hello ', $name, "\n";
+    }
+}
+
+$c = new C();
+call_user_func($c, 'PHP!');
+?>
+
+Exemple avec Closures (.ie fonctions anonymes):
+
+<?php
+// Our closure
+$double = function($a) {
+    return $a * 2;
+};
+
+// This is our range of numbers
+$numbers = range(1, 5);
+
+// Use the closure as a callback here to
+// double the size of each element in our
+// range
+$new_numbers = array_map($double, $numbers);
+
+print implode(' ', $new_numbers);
+?>
+
+-- Syntaxe callable de première classe --
+
+Syntaxe permet de créer fonctions anonymes depuis des callables. Remplace syntaxe existante des callables utilisant chaînes et
+tableaux.
+Avantage = accessible à n'analyse statique & util. la portée du point ou le callable est acquis
+
+Syntaxe:
+	CallableExpr(...)
+utilisé pour créer un objet Closure depuis le callable.
+CallableExpr = toute expression qu'on peut appeller dans la grammaire PHP.
+
+Exemple:
+
+<?php
+class Foo {
+   public function method() {}
+   public static function staticmethod() {}
+   public function __invoke() {}
+}
+$obj = new Foo();
+$classStr = 'Foo';
+$methodStr = 'method';
+$staticmethodStr = 'staticmethod';
+$f1 = strlen(...);
+$f2 = $obj(...);  // invokable object
+$f3 = $obj->method(...);
+$f4 = $obj->$methodStr(...);
+$f5 = Foo::staticmethod(...);
+$f6 = $classStr::$staticmethodStr(...);
+// traditional callable using string, array
+$f7 = 'strlen'(...);
+$f8 = [$obj, 'method'](...);
+$f9 = [Foo::class, 'staticmethod'](...);
+?>
+
+[!] ... fait partie de la syntaxe
+
+Exemple lié au scope:
+
+<?php
+class Foo {
+    public function getPrivateMethod() {
+        return [$this, 'privateMethod'];
+    }
+    private function privateMethod() {
+        echo __METHOD__, "\n";
+    }
+}
+$foo = new Foo;
+$privateMethod = $foo->getPrivateMethod();
+$privateMethod();
+// Fatal error: Call to private method Foo::privateMethod() from global scope
+// This is because call is performed outside from Foo and visibility will be checked from this point.
+class Foo1 {
+    public function getPrivateMethod() {
+        // Uses the scope where the callable is acquired.
+        return $this->privateMethod(...); // identical to Closure::fromCallable([$this, 'privateMethod']);
+    }
+    private function privateMethod() {
+        echo __METHOD__, "\n";
+    }
+}
+$foo1 = new Foo1;
+$privateMethod = $foo1->getPrivateMethod();
+$privateMethod();  // Foo1::privateMethod
+?>
+
+Sans cette syntaxe (Foo), l'appel ne respecte pas le scope: on a beau obtenir la fonc. anonyme depuis l'intérieur de la classe,
+on ne peut quand même pas l'appeller car issue d'une fonction privée.
+Avec cette syntaxe (Foo1), on voit qu'on peut.
+
+Cette syntae ne peut pas être combinée avec opérateur nullsafe, sinon err. compilation:
+
+<?php
+$obj?->method(...);
+$obj?->prop->method(...);
+?>
+
+Création d'objets avec cette syntaxe (ex: new Foo(...)) = pas supportée, car:
+	new Foo()
+Est pas considérée comme un appel.
+
+--
+
+-- Type Mixed --
+
+Le type mixed accepte toutes les valeurs. Equivalent au type union  object|resource|array|string|float|int|bool|null
+Il existe depuis PHP 8.0.0
+Type mixed, dans jargon de théorie des types = le 'top type' (tout les autres types en sont un sous-type)
+
+-- Type Void --
+
+Utilisé quand des les déclarations de type de retour de fonctions
+Signifie que la fonc. ne retourne pas de valeur, mais se termine qd meme
+Peut pas faire partie d'un type union
+Dispo depuis PHP 7.1.0
+[!] Même si fonc. type de retour void, elle retourne qd meme une valeur: null
+
+-- Type Never --
+
+Never = type de retour de fonction signifiant que la fonc. ne se termine pas
+Soit la fonc. appelle exit(), lance une exception ou est dans une boucle infinie
+Never peut pas faire partie d'un type union & est dispo depuis PHP 8.1.0
+never = dans le jargon de la théorie de types, le 'bottom type' (il est le sous-type de tt les autres types & peut remplacer
+tout type de retour dans l'héritage)
+
+-- Types relatifs de classes "Relative class types" --
+
+Ces types ne peuvent être util. que au sein de classes:
+
+	- self: la valeur doit être un instanceof de la même classe que celle dans laquelle la décl.tion de type est utilisée
+	- parent: la valeur doit être un instanceof du parent de la classe dans laquelle la décl.tion de type = utilisée
+	- static: type de retour de fonction seulement qui requière que la val. retournée sous une instanceof de la même classe 
+	que celle depuis laquelle la méthode est appellée. Dispo depuis PHP 8.0.0
+
+-- Les types-valeurs --
+
+Ce sont des types qui vérifient le type mais aussi la valeur. Y'en a 2 en PHP:
+	- false, depuis PHP 8.0.0
+	- et true, depuis PHP 8.2.0
+
+[!] Avant PHP 8.2.0, type false pouvait que être utilisée dans un type union
+[!] Peut pas définir nos propres types-valeurs. Doit util. énums à la place
+
+-- Le type iterable --
+
+Iteraible = alias de type intégré dès compilation pour array|Traversable
+Depuis son introd. à PHP 7.1.0 & avant PHP 8.2.0, iterable = pseudo-type intégré qui agissait comme l'alias de type mentionné &
+peut être util. comme déclaration de type
+Type iterable peut être utilisé dans foreach & avec yield depuis l'intérieur d'un générateur
+
+[!] Fonc déclarant iterable comme type de retour peuvent aussi être des generateurs
+
+Ex:
+
+Example #1 Iterable generator return type example
+
+<?php
+
+function gen(): iterable {
+    yield 1;
+    yield 2;
+    yield 3;
+}
+
+?>
+
+-- Déclarations de type --
+
+Décl de type = peuvent être ajoutée aux arguments de fonctions, valeurs de retour, depuis PHP 7.4.0 propriétés de classes, 
+depuis PHP 8.3.0 constantes de classes.
+S'assurent que la valeur est du type spécifié au moment de l'appel, sinon TypeError levée.
+
+Tout les types de PHP, sauf resource, peuvent être utilis. dans une decl. de type 'user-land'
+[!] Qd classe implémente méthode d'interface ou réimplémente méthode déja définie par une classe parente, elle
+doit être compatible avec sa définition. Une méthode = compatible si elle suit les règles de variance.
+
+-- Notes usage des types atomiques --
+
+Types atomique : utilisation directe/simple avec qqs nuances, décrites ici:
+
+	- Types scalaires -
+
+Alias de noms pour les types scalaires (bool, int, float, string) = pas supportés
+A la place, traités comme noms classe ou interface.
+Ex: utiliser boolean comme déclaration de type va requérir que la valeur soit une instanceof de la classe ou interface boolean
+plutôt que type bool:
+
+<?php
+    function test(boolean $param) {}
+    test(true);
+?>
+
+Donnera:
+
+Warning: "boolean" will be interpreted as a class name. Did you mean "bool"? Write "\boolean" to suppress this warning in /in/9YrUX on line 2
+
+Fatal error: Uncaught TypeError: test(): Argument #1 ($param) must be of type boolean, bool given, called in - on line 3 and defined in -:2
+Stack trace:
+#0 -(3): test(true)
+#1 {main}
+  thrown in - on line 2
+
+

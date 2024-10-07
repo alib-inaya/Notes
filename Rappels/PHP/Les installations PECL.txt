@@ -7,3 +7,219 @@ PECL)
 
 Utilisation commandes pear: https://pear.php.net/manual/en/guide.users.commandline.cli.php
 Infos commandes pear s'appliquent à la commande pecl
+
+Extension partagée doit être compilée, installée & chargée pour être utilisée
+Méthodes décrites ci-dessous fournissent diverses instructions sur la façon de compiler & installer des extensions mais les chargent pas
+automatiquement
+Extensions peuvent être chargées en ajoutant une directive d'extension au fichier php.ini ou avec la fonction dl()
+
+Quand compil. modules PHP => doit avoir outils versions appropriées (autoconf, automake, libtool, ...)
+Se référer à https://www.php.net/git.php pour la liste des utilisateurs nécessaires & versions
+
+==
+
+-- Télécharger extensions PECL --
+
+Plusieurs méthodes:
+
+Cette commande DL & installe le code des extensions automatiquement:
+	pecl install <nom de l'extension>
+Ex:
+	pecl install extname
+
+https://www.php.net/git.php contient infos sur diff. extensions offertes par l'équipe dev de PHP & infos modifs entre versions, notes
+versions, prérequis pour fonctionnement extension & autre détails
+
+- Extensions PECL présentes sur le site PECL peuvent être téléchargées & installées avec
+	pecl download extname
+
+- Bcp d'extensions PECL sont présentes sur GitHub
+- Certains résident aussi sur SVN. Exemple, pour DL depuis SVN:
+	svn checkout https://svn.php.net/repository/pecl/extname/trunk extname
+
+- Téléchargements Windows: le projet PHP compile & offre des DLL Windows pour la pluspart des extensions PECL sur la page de packages
+
+==
+
+-- Installer extension PECL sous Windows --
+
+Deux manières:
+	- Compiler en PHP
+	- Charger le DLL
+
+Charger extension pré-compilée = plus facile & préférable
+
+Pour charger une extension, doit être dispo en .dll
+Toutes les extensions = autom.ement & periodiquement compilée par le groupe PHP
+
+Voir https://www.php.net/manual/en/install.windows.building.php pour comment compiler une extension standalone (un DLL)
+
+-- Where to find an extension --
+
+extension PHP = habituellement appelées php_*.dll (* = nom de l'extension) et se trouvent dans PHP\ext
+PHP vient avec les extensions les plus utiles pour les devs (ce sont les 'bundled extensions')
+
+Autres extensions peuvent être trouvée dans le dépôt PECL (PHP Extension Community Library)
+
+Si développe extension => peut la host sur PECL
+
+==
+
+-- Quelle extension télécharger ? --
+
+Souvent, y'a différentes vers. de l'extension selon la version, les paramètres de thread-safety, l'archi CPU (x86, x64, ...), les param.
+de débogage, ...
+
+Les param. de l'extension => doivent match celles de l'exécutable PHP employé (voir phpinfo())
+
+Soit
+
+<?php
+phpinfo();
+?>
+
+Soit 
+	drive:\path\to\php\executable\php.exe -i 
+depuis le terminal
+
+==
+
+-- Charger une extension --
+
+Façon la plus commune: l'inclure dans php.ini
+Bcp d'extensions y sont déjà placées au préalable, mais doit enlever le ; pour les activer
+
+Depuis PHP 7.2.0, le nom de l'extension peut aussi être util.sé (plus facile & cross-platform, façon recommandée)
+
+Ex, on change:
+
+;extension=php_extname.dll
+
+en
+
+extension=php_extname.dll
+
+Pour l'activer.
+
+Encore mieux, on utilise son nom d'extension plutôt que son nom de fichier:
+
+; As of PHP 7.2.0, prefer:
+extension=extname
+zend_extension=another_extension
+
+[!] Certains serv. Web n'util. pas le php.ini qui vient avec l'executable, mais un autre. Voir phpinfo() pour son chemin.
+
+Après ajout extension, sauvegarder php.ini, redémarrer le serv. Web, et voir phpinfo(). Nouvelle ext.sion devrait appar. dans sa
+propre section
+
+-- Résolution pbs --
+
+Si ext. n'apparait pas, doit voir les logs.
+Si PHP lancé depuis CLI, l'erreur devrait s'afficher.
+Si PHP util. dans serveur web, l'endroit & format des logs varie selon logiciel. Voir docu serveur web, car pas lié à PHP.
+Pb communs = localisation des DLL nécessaires, valeur du param 'extension_dir' de php.ini, mismatch paramètres compile-time.
+
+Si pb = mismatch compile-time, alors le DLL téléchargé = le mauvais. Doit tel. l'extension avec les bons paramètres (archi CPU, 
+thread-safety, ...)
+
+==
+
+-- Compiler des ext.sions PECL avec la cmd pecl --
+
+PECL = facilite création d'extensions PHP partagée, pour se faire:
+
+	pecl install extname
+
+Ceci télécharge extname, compile & installe extname.so dans la configuration 'extension_dir'. extname.so peut ensuite être chargé
+via php.ini
+
+Par défaut, pecl va pas installer les packages en vers. alpha ou beta. Si aucun package stable dispo, un package beta peut être 
+installé avec:
+
+	pecl install extname-beta
+
+Une version spécifique avec la variante:
+
+	pecl install extname-0.1
+
+Ensuite doit redémarrer le service web pour que les changements s'appliquent.
+
+==
+
+-- Compiler extensions PECL partagées avec phpize --
+
+Parfois, l'installeur pecl = pas une option (à cause firewall ou extension dispo que sur git, ...)
+Alors, peut util. les outils de bas niveau pour build manuellement
+
+La cmd phpsize => util. pour préparer l'environement de build pour une extension PHP
+Dans cet ex. les sources pour une extension sont dans un dossier nomé extname:
+
+$ cd extname
+$ phpize
+$ ./configure
+$ make
+# make install
+
+Instal. avec succès va créer extname.so et le placer dans le dir. des extensions PHP.
+Le php.ini devra être réajusté, une ligne
+	extension=extname.so
+devra être ajoutée avant de pouvoir l'utiliser.
+
+Si le système n'a pas la commande phpize, et des packages précompilés (comme des RPM) sont utilisés, doit s'assurer
+d'installer aussi la vers. de dev. du package PHP car ils incluent souvent la cmd phpize avec les bons fichiers
+d'en-tête (header files) pour compiler PHP & ses extensions.
+
+==
+
+-- php-config --
+
+php-config = script shell simple pour obtenir infos à propos de la config PHP installée
+
+Qd extensions sont compilés, si plusieurs vers. PHP installées, l'installation pour laquelle compiler peut être
+spécifiée avec --with-php-config comme option durant la configuration, mettant en place le chemin pour le script
+php-config respectif.
+
+Peut voir la liste des commandes avec php-config -h
+
+Voir https://www.php.net/manual/en/install.pecl.php-config.php
+
+==
+
+-- Compiler des extensions statiquement dans PHP --
+
+Peut vouloir compil. une extension statiquement au sein du binaire PHP
+Pour se faire, doit placer l'extension dans
+
+	/path/to/php/src/dir/ext/
+
+Le système de compil. PHP = nécessaire pour renegerer son script de config. :
+
+$ cd /path/to/php/src/dir/ext
+$ pecl download extname
+$ gzip -d < extname.tgz | tar -xvf -
+$ mv extname-x.x.x extname
+
+Ce qui résultera en ce dossier: 
+
+	/path/to/php/src/dir/ext/extname
+
+On force ensuite PHP à recompiler le script de configuration, puis on compile:
+
+$ cd /path/to/php/src/dir
+$ rm configure
+$ ./buildconf --force
+$ ./configure --help
+$ ./configure --with-extname --enable-someotherext --with-foobar
+$ make
+$ make install
+
+[!] Pour exec buildconf, doit avoir autoconf 2.68 et automake 1.4+. Versions plus recentes d'autoconf peuvent fonctionner mais pas supportées.
+
+Que --enable-extname ou --with-extname soit utilisé depend de l'extension. Typiquement: si une extension ne requière pas de lib. externe, on utilise --enable-<nom de l'extension>
+
+Pour être sur, on peut exécuter ceci après buildconf:
+
+$ ./configure --help | grep extname
+
+==
+

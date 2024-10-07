@@ -1,0 +1,39 @@
+Variables en PHP = représentée avec le signe $ puis le nom de la variable.
+
+$maVariable = "Hello, World!";
+
+Nom des variables = sensibles à la casse.
+$this est une variable spéciale à laquelle on ne peut pas assigner.
+
+Par défaut, l'assignation des variables se fait par valeur. C'est à dire que quand j'assigne une variable à une autre, je copie
+la donnée de l'une sur l'autre, et le fait d'altérer l'une ensuite n'affectera pas l'autre.
+(Assign by value)
+
+Autre type d'assignation: par référence (Assign by reference)
+ça signifie que l'autre variable devient un alias de la première, et changer l'une affectera
+l'autre et vice-versa.
+Pour ça on utilise l'opérateur & au début de la variable dont on assigne la ref. à l'autre.
+
+Exemple:
+
+<?php
+$foo = 'Bob';              // Assign the value 'Bob' to $foo
+$bar = &$foo;              // Reference $foo via $bar.
+$bar = "My name is $bar";  // Alter $bar...
+echo $bar;
+echo $foo;                 // $foo is altered too.
+?>
+
+Seules les variables nommées peuvent être employés pour assigner à une référence.
+
+$bar = &(24 * 7);  // Invalid; references an unnamed expression.
+
+function test()
+{
+   return 25;
+}
+
+$bar = &test();    // Invalid.
+
+Dans PHP pas nécessaire d'initialiser les var. mais est une bonne pratique.
+Valeur non-inot = on la val. par défaut de leur type selon le contexte. bool = false, int/float = 0, string = "", arrays = []
