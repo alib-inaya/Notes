@@ -1,0 +1,92 @@
+Sous UNIX, générallement installé à /usr/local/bin/python 
+Ajouter /usr/local/bin au chemin de recherche du shell Unix rend possible son accès directement depuis le shell en écrivant:
+
+	python
+
+Similairement, sous Windows, ajouter le fichier ou se trouve l'interpreteur dans la var. d'env. PATH
+
+Ceci ouvre l'interpreteur.
+
+On possède alors des fonctionnalités d'édition de l'interpréteur (édition interactive, substitution depuis l'historique,
+complétion sur les systèmes gérant la bibliothèque GNU Readline)
+
+Taper un caractère de fin de fichier (CTRL-D sous UNIX, CTRL-Z sous Windows) ou bien écrire 'exit()', 'quit()' ferme l'interpréteur
+av. un code de sortie nul.
+
+Intépreteur fonctionne comme shell Unix: quand il est appelé avec l'entrée standard connectée à un périphérique ttyp, il lit &
+exécute les commandes interactivement. Quand il est appelé avec un nom de fichier en argument ou av. un fichier comme entrée
+standard, il lit et exécute un script depuis ce fichier.
+
+Autre façon de lancer l'interpréteur: 
+
+	python -c commande [arg] ...
+
+Exécute les instructions de commande comme l'option -c du shell.
+
+Peut aussi appeller des modules pythons avec -m, exemple:
+
+	python -m module [arg] ...
+
+On peut exécuter un script et directement passer en mode interactif en passant -i avant le script à l'interpréteur.
+
+Voir tous les paramètres utilisables en CLI: https://docs.python.org/fr/3/using/cmdline.html#using-on-general
+
+-- Passer des arguments --
+
+Quand connus de l'interpréteur, le nom du script & ses arguments additions sont représentés sous forme d'une liste assignée à la
+var. argv du module sys. On peut y accéder en exécutant import sys
+La liste contienbt minimum 1 élément;
+	- Quand aucun script ni argument est donné, sys.argv[0] est une chaîne vide.
+	- Quand '-' (qui représente l'entrée standard) est passé comme nom de script, sys.argv[0] contient '-'.
+	- Quand -c est utilisé, sys.argv[0] contient '-c'
+	- Quand -m est utilisé, le nom complet du module est assigné à sys.argv[0]
+Les options trouvées après -c commande ou -m module ne sont pas lues comme options de l'interpréteur Python
+mais laissées dans sys.argv pour être utilisées par le module ou la commande.
+
+-- Mode interactif --
+
+Quand commandes lues depuis un tty, interpreteur = en mode interactif
+Dans ce mode:
+	- L'interpr. demande 'prompt' pour la prochaine commande avec le 'primary prompt', en général trois flèches >>>
+	- Pour les lignes de continuation il prompt avec le 'secondary prompt', en général trois points ...
+
+Interpr. affiche mesg bienvenue avec sa version & une notice de copyright avant d'afficher le premier prompt
+
+Python 3.13 (default, April 4 2023, 09:25:04)
+[GCC 10.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>>
+
+Lignes de continuation = utilisées quand on écrit une construction sur plusieurs lignes
+Ex:
+
+the_world_is_flat = True
+if the_world_is_flat:
+    print("Be careful not to fall off!")
+
+Affiche:
+
+Be careful not to fall off!
+
+-- Encodage du code source --
+
+Par défaut, code source Python = traité comme si encodé en UTF-8
+Dans cet encodage, caractères de la plupart des langues du monde peuvent être util. dans littéraux de chaînes de caractères,
+identificateurs, commentaires (lib standard utilise que caractères ASCII pour portabilité)
+
+Déclarer encodage autre que celui par défaut avec un commentaire spécial ajouté au début du code source (première ligne), syntaxe:
+
+# -*- coding: encoding -*-
+
+Avec à la place d'encoding l'un des codecs valides supportés par Python. Exemple pour déclarer qu'on utilise l'encodage
+Windows-1252:
+
+# -*- coding: cp1252 -*-
+
+Seule exception à la règle de la première ligne = quand on utilise la ligne shebang UNIX. Dans ce cas on place le commentaire
+d'encodage à la seconde ligne:
+
+#!/usr/bin/env python3
+# -*- coding: cp1252 -*-
+
+==

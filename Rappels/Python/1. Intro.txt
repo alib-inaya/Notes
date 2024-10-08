@@ -1,0 +1,37 @@
+Lang. de haut niveau, orienté POO, typage dynamique, interprété = idéal pour scripts & dev. rapide d'applis 
+sur la pluspart des plateformes
+Possède struc. de données de haut niveau
+
+Interpreteur Python & sa biblio. standard = dispo librement (sources, binaires) sur tt les plateformes majeurs depuis le site
+officiel www.python.org et peuvent être librement redistribués
+
+Interpréteur Python = peut être étendu par de nouvelles fonctions & types de données implémentées en C ou C++ (ou autre lang.
+appelable depuis le C)
+Python = aussi adapté comme langage d'extension pour personnaliser des applis
+
+--
+
+Description objets & modules de la bibliothèque standard: https://docs.python.org/fr/3/library/index.html#library-index
+Référence du langage Python: https://docs.python.org/fr/3/reference/index.html#reference-index
+Comment écrire extensions C/C++: https://docs.python.org/fr/3/extending/index.html#extending-index https://docs.python.org/fr/3/c-api/index.html#c-api-index
+
+--
+
+Python = polyvalent, bon pour automatiser & coder rapidosse (base de données, appli graphique, simple jeu ...)
+Dev en C/C++/Java = chronophage, lourd (écriture, compilation, test, compilation, ...)
+Python = meilleure verif. erreurs que C. 
+	language haut niveau, possède nativement types de données avancés comme tableaux taille variable ou dictionnaires.
+
+Avec Python, peut découper notre programme en modules réutilisables dans d'autres programmes Python.
+Python = fourni av. grande variété de modules standards qu'on peut util. comme base de nos programmes
+Certains donnent accès aux entrées/sorties, aux appels systèmes, aux connecteurs réseaux, aux outils comme Tk pour
+créer des interfaces graphiques
+
+Programme Python = plus court que C, C++, Java, parceque:
+	- Types de données de haut niveau, donc opérations complexes en une instruction
+	- Identitation plutôt qu'accolades utilisées pour regrouper instructions ensembles
+	- Pas de necessité de déclaration de variable/argument
+
+Python = extensible, si peux coder en C, alors peut facilement ajouter nouvelle fonction ou module à l'intepréteur poue l'étendre
+(pour opérations critiques optimisées à haute vitesse, lier des programmes en Python à des bibliothèques dispo que en binaire, ..)
+Peut lier l'interpréteur Python à une appli écrite en C & l'utiliser comme langage d'extension/commandes pour cette appli

@@ -1,0 +1,502 @@
+-- Déclaration if --
+
+>>> x = int(input("Please enter an integer: "))
+Please enter an integer: 42
+>>> if x < 0:
+...     x = 0
+...     print('Negative changed to zero')
+... elif x == 0:
+...     print('Zero')
+... elif x == 1:
+...     print('Single')
+... else:
+...     print('More')
+... 
+More
+
+-- Déclaration for --
+
+Au lieu d'itérer sur une suite arithmétique comme en Pascal, ou de laisser l'utilisateur définir le pas d'itération et la
+condition d'arrêt comme en C, le for en Python itère les éléments de toute séquence (liste, chaîne de caractères, ...) dans leur
+ordre.
+
+>>> # Measure some strings:
+>>> words = ['cat', 'window', 'defenestrate']
+>>> for w in words:
+...     print(w, len(w))
+... 
+cat 3
+window 6
+defenestrate 12
+
+Modifier une collection en itérant dessus = peut être compliq. 
+Au lieu de ça, peut itérerer sur une copie de la collection, ou bien créer une nouvelle collection.
+
+# Create a sample collection
+users = {'Hans': 'active', 'Éléonore': 'inactive', '景太郎': 'active'}
+
+# Strategy:  Iterate over a copy
+for user, status in users.copy().items():
+    if status == 'inactive':
+        del users[user]
+
+# Strategy:  Create a new collection
+active_users = {}
+for user, status in users.items():
+    if status == 'active':
+        active_users[user] = status
+
+-- La fonction range() --
+
+Elle génère une suite arithmétique.
+
+>>> for i in range(5):
+...     print(i)
+... 
+0
+1
+2
+3
+4
+
+Peut spécifier ou la suite démarre (inclusif), ou elle cesse (exclusif) ainsi que la différence commune voulue 'step':
+
+>>> list(range(5, 10))
+[5, 6, 7, 8, 9]
+
+>>> list(range(0, 10, 3))
+[0, 3, 6, 9]
+
+>>> list(range(-10, -100, -30))
+[-10, -40, -70]
+
+Pour itérer sur les index d'une séquence, peut combiner range() et len() de la sorte:
+
+>>> a = ['Mary', 'had', 'a', 'little', 'lamb']
+>>> for i in range(len(a)):
+...     print(i, a[i])
+... 
+0 Mary
+1 had
+2 a
+3 little
+4 lamb
+
+Tenter d'afficher via l'interpreteur un range directement donne ceci:
+>>> range(10)
+range(0, 10)
+
+C'est parceque l'objet retourné par range() se comporte comme une liste mais n'en n'est pas une.
+C'est un objet qui retourne successivement les éléments de la séquence désirée au fil de l'itération, mais ne génère pas
+vraiment la liste, évitant de gacher de l'espace.
+
+Un tel objet est 'iterable' (viable comme cible de fonctions & constructions attendant un objet duquel on peut obtenir des
+éléments successifs jusqu'à ce qu'il n'en reste plus; for est une telle construction, sum() est une telle fonction)
+
+>>> sum(range(4))  # 0 + 1 + 2 + 3
+6 
+
+-- Les statements break et for --
+
+break brise l'exécution d'une boucle for ou while;
+
+>>> for n in range(2, 10):
+...     for x in range(2, n):
+...         if n % x == 0:
+...             print(f"{n} equals {x} * {n//x}")
+...             break
+... 
+4 equals 2 * 2
+6 equals 2 * 3
+8 equals 2 * 4
+9 equals 3 * 3
+
+continue continue à la prochaine itération de la boucle;
+
+>>> for num in range(2, 10):
+...     if num % 2 == 0:
+...         print(f"Found an even number {num}")
+...         continue
+...     print(f"Found an odd number {num}")
+... 
+Found an even number 2
+Found an odd number 3
+Found an even number 4
+Found an odd number 5
+Found an even number 6
+Found an odd number 7
+Found an even number 8
+Found an odd number 9
+
+-- Les clauses else sur les boucles --
+
+On peut pairer le 'break' d'une 'for' ou d'une 'while' avec une clause 'else'
+Si la boucle se termine sans exécuter le 'break', la clause 'else' s'exécute.
+
+Dans la 'for' la clause 'else' est exécutée après l'itération finale, si aucun break n'a eu lieu.
+Dans la 'while', elle s'exécute après que la condition de la boucle devienne fausse.
+
+>>> for n in range(2, 10):
+...     for x in range(2, n):
+...         if n % x == 0:
+...             print(n, 'equals', x, '*', n//x)
+...             break
+...     else:
+...         # loop fell through without finding a factor
+...         print(n, 'is a prime number')
+... 
+2 is a prime number
+3 is a prime number
+4 equals 2 * 2
+5 is a prime number
+6 equals 2 * 3
+7 is a prime number
+8 equals 2 * 4
+9 equals 3 * 3
+
+-- La déclaration 'statement' pass --
+
+pass ne fait rien. Peut être utilisée quand on a syntactiquement besoin d'un statement mais que le programme ne doit faire aucune action.
+
+Exemple:
+
+>>> while True:
+...     pass  # Busy-wait for keyboard interrupt (Ctrl+C)
+... 
+Utilisée souvent pour créer des classes minimales:
+
+>>> class MyEmptyClass:
+...     pass
+... 
+
+On peut utiliser pass comme 'place-holder' pour une fonction ou corps conditionnel quand on 
+travaille sur du nouveau code. Le 'pass' est silencieusement ignoré:
+
+>>> def initlog(*args):
+...     pass   # Remember to implement this!
+... 
+
+-- La déclaration 'statement' match --
+
+Prend expression & compare à des patterns déclarés comme 1 ou + blocks 'case'.
+Similaire à switch, en C/Java/JS. Plus similaire au pattern matching Rust/Haskell.
+Premier pattern qui match = exécuté
+
+def http_error(status):
+    match status:
+        case 400:
+            return "Bad request"
+        case 404:
+            return "Not found"
+        case 418:
+            return "I'm a teapot"
+        case _:
+            return "Something's wrong with the internet"
+
+Le "nom de variable" _ agis comme un 'wildcard' et match tout le temps si aucun autre cas ne match.
+Si aucun cas ne match, aucune branche n'est exécutée.
+
+Peut combine plusieurs avec | "ou";
+
+case 401 | 403 | 404:
+    return "Not allowed"
+
+Peut aussi binder des variables venant des expressions données au sein des patterns:
+
+# point is an (x, y) tuple
+match point:
+    case (0, 0):
+        print("Origin")
+    case (0, y):
+        print(f"Y={y}")
+    case (x, 0):
+        print(f"X={x}")
+    case (x, y):
+        print(f"X={x}, Y={y}")
+    case _:
+        raise ValueError("Not a point")
+
+Je lui passe un point (x, y). Si il vaut l'origine, il m'affiche l'origine.
+Dans les cas x = 0, il affiche la coordonnée y du point.
+Dans les cas y = 0, il affiche la coordonnée x du point.
+Dans tous les cas, il affiche les coordonnées du point x et y.
+Les quatrième pattern capture deux variables, ce qui le rend similaire à l'assignement déstructurateur 'unpacking assignment)
+(x, y) = point
+
+Si utilise classes pour structurer nos données, peut utiliser le nom de la classe suivi par une liste d'arguments
+ressemblant un constructeur, mais avec la possibilité de capturer les attribus dans des variables;
+
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+def where_is(point):
+    match point:
+        case Point(x=0, y=0):
+            print("Origin")
+        case Point(x=0, y=y):
+            print(f"Y={y}")
+        case Point(x=x, y=0):
+            print(f"X={x}")
+        case Point():
+            print("Somewhere else")
+        case _:
+            print("Not a point")
+
+Peut utiliser params positionnels avec qqs classes incluses qui donne un ordre pour leurs attributs
+Peut aussi définir une position spécifique pour les attributs dans les patterns en ajoutant 
+l'attribute spécial __match_args__ dans nos classes. Si cet attribut spécial vaut ("x", "y"), alors tous les ptterns
+suivants sont équivalents:
+
+Point(1, var)
+Point(1, y=var)
+Point(x=1, y=var)
+Point(y=var, x=1)
+
+Peut voir les patterns comme une forme étendue de ce qu'on mettrait du côté gauche d'une assignation.
+Seuls les noms 'standalones' comme var en haut sont assignés dans un statement match.
+Les noms à points comme foo.bar, les noms d'attributs comme x= et y= en haut, ou de classe comme Point(...) ne sont jamais assignés.
+
+Patterns = peuvent être arbitrairement imbriqués.
+Ex: si on a une liste de Points, avec __match_args__, on peut les matcher comme ça:
+
+class Point:
+    __match_args__ = ('x', 'y')
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+match points:
+    case []:
+        print("No points")
+    case [Point(0, 0)]:
+        print("The origin")
+    case [Point(x, y)]:
+        print(f"Single point {x}, {y}")
+    case [Point(0, y1), Point(0, y2)]:
+        print(f"Two on the Y axis at {y1}, {y2}")
+    case _:
+        print("Something else")
+
+Peut ajouter une clause 'if' a un pattern, connue comme un guarde 'a guard'. Si il vaut false, match essaie le block case suivant.
+La capture de valeur se passe avant l'évaluation du guarde:
+
+match point:
+    case Point(x, y) if x == y:
+        print(f"Y=X at {x}")
+    case Point(x, y):
+        print(f"Not on the diagonal")
+
+Autres fonctionnalités clés de match:
+	- Les pattern tuple & list signifient la même chose & matchent des séquences arbitraires. Exception: ils ne matchent pas
+les itérateurs & chaînes de caractères.
+	- Patterns de séquences gèrent la déstructruation étendue 'extended unpacking': [x, y, *rest] et (x, y, *rest) fonctionnent
+de façon similaire aux assignations de déstructuration 'unpacking assignments'. Le nom après * peut aussi être _.
+Donc, (x, y, *_) match une séquence d'au moins deux éléments, x et y, sans binder les autres.
+	- Patterns d'association 'mapping patterns' comme { "bandwidth":b, "latency":l } capture les valeurs "bandwidth" 
+et "latency" d'un dictionnaire. Contrairement aux patterns de séquence, les clés en plus sont ignorées. Une déstructuration
+'unpacking' comme **rest est supporté. (Mais **_ serait redondant, donc pas autorisé.)
+	- Les sous-patterns 'subpatterns' sont capturés avec le mot-clé as;
+
+	case (Point(x1, y1), Point(x2, y2) as p2): ...
+
+Va capturer le second élement de l'entrée en tant que p2 (tant que l'entrée est une séquence de deux points)
+	- La plupart de littéraux sont comparés par égalité, mais les singleton True, False, None sont comparés
+par identité.
+	- Les patterns peuvent utiliser des constantes nommées. Doivent être des noms avec points . pour éviter
+confusion de les interpréter comme variables de captures.
+
+from enum import Enum
+class Color(Enum):
+    RED = 'red'
+    GREEN = 'green'
+    BLUE = 'blue'
+
+color = Color(input("Enter your choice of 'red', 'blue' or 'green': "))
+
+match color:
+    case Color.RED:
+        print("I see red!")
+    case Color.GREEN:
+        print("Grass is green")
+    case Color.BLUE:
+        print("I'm feeling the blues :(")
+
+-- Définir des fonctions --
+
+>>> def fib(n):    # write Fibonacci series up to n
+...     """Print a Fibonacci series up to n."""
+...     a, b = 0, 1
+...     while a < n:
+...         print(a, end=' ')
+...         a, b = b, a+b
+...     print()
+... 
+>>> # Now call the function we just defined:
+>>> fib(2000)
+0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597
+
+Le mot-clé def permet de définir une fonction. Il est suivi deu nom de la fonction, et d'une liste des paramètres formels
+de la fonction entourées de paramètres. Le corps de la fonction vient après, est doit être indenté.
+Optionellement, on peut mettre comme première déclaration du corps de la fonction un littéral de chaîne
+de caractères, qui est alors le 'documentation string' ou 'docstring'.
+Il existe des outils pour produire de la documentation en ligne ou imprimée à partir des docstrings.
+Bonne pratique d'utiliser les docstrings.
+
+Exécution d'une fonction = introduit une nouvelle table de symbole utilisée pour les variables
+locales de la fonction.
+Toutes les assignations de variables dans une fonction stocke la valeur dans la table locale de symbols 'local symbol table'.
+Les références aux variables, elles, regardent, par ordre;
+	- la table locale de symboles 'local symbol table'
+	- celles des fonctions qui entourent l'actuelle
+	- la table globale des symboles 'global symbol table'
+	- Les tables des noms inclus 'table of build-in names'
+Les variables globales & celles des fonctions entourentent ne peuvent donc pas être assignées directement depuis
+une fonction (sauf, pour les var. globales, nommées dans un statement 'global', ou pour les variables de
+fonctions entourantes, dans un statement 'nonlocal') bien qu'elles puissent être référencées.
+
+Les paramètres (arguments) d'un appel de fonction sont introduits dans la table locale de symboles de la fonction
+appellée. Les arguments sont passés en utilisant l'appel par valeur (ou valeur est toujours la référence d'un objet,
+pas la valeur de l'objet)
+Qd une fonc. appelle une autre fonc., ou s'apelle elle même recursivement, une nouvelle table locale de symboles est crée
+pour cet appel.
+
+Définition de fonction associe le nom de la fonction avec l'objet de la fonction dans la table de symbole actuelle.
+L'interpréteur reconnait l'objet vers lequel pointe le nom de la fonction comme une fonction définie par l'utilisateur.
+D'autres noms peuvent pointer vers la même fonction;
+
+>>> fib
+<function fib at 10042ed0>
+>>> f = fib
+>>> f(100)
+0 1 1 2 3 5 8 13 21 34 55 89
+
+On pourrait dire que comme fib ne retourne aucune valeur, c'est une procédure, mais pas une fonction.
+C'est faux; en Python même les fonctions sans 'return' retournent la valeur None (nom inclus).
+
+>>> fib(0)
+>>> print(fib(0))
+None
+
+-- Autres façons de définir des fonctions --
+
+Fonction définie avec 1 argument obligatoire, 2 facultatifs avec valeurs par défaut;
+
+def ask_ok(prompt, retries=4, reminder='Please try again!'):
+    while True:
+        reply = input(prompt)
+        if reply in {'y', 'ye', 'yes'}:
+            return True
+        if reply in {'n', 'no', 'nop', 'nope'}:
+            return False
+        retries = retries - 1
+        if retries < 0:
+            raise ValueError('invalid user response')
+        print(reminder)
+
+Ici le mot clé 'in' teste la présence d'une valeur au sein d'une séquence.
+
+Les valeurs par défaut sont évaluées au point de la définition de la fonction dans le scope définissant, de telle sorte que;
+
+i = 5
+
+def f(arg=i):
+    print(arg)
+
+i = 6
+f()
+
+affiche 5.
+
+[!!] La valeur par défaut = évaluée que 1 fois. Quand elle est un objet mutable comme une liste, dictionnaire, instance de la plupart
+des classes, ça change tout. Exemple;
+
+def f(a, L=[]):
+    L.append(a)
+    return L
+
+print(f(1))
+print(f(2))
+print(f(3))
+
+Va afficher;
+
+[1]
+[1, 2]
+[1, 2, 3]
+
+On peut faire de la sorte si on veut pas que la valeur par défoit soit partagée à travers les appels subséquents;
+
+def f(a, L=None):
+    if L is None:
+        L = []
+    L.append(a)
+    return L
+
+-- Arguments mot-clés 'keyword arguments' --
+
+Peut appeller les fonctions avec des arguments mot-clés de la forme kwarg=value
+Exemple;
+
+def parrot(voltage, state='a stiff', action='voom', type='Norwegian Blue'):
+    print("-- This parrot wouldn't", action, end=' ')
+    print("if you put", voltage, "volts through it.")
+    print("-- Lovely plumage, the", type)
+    print("-- It's", state, "!")
+
+Peut s'appeller de ces façons valides là;
+
+parrot(1000)                                          # 1 positional argument
+parrot(voltage=1000)                                  # 1 keyword argument
+parrot(voltage=1000000, action='VOOOOOM')             # 2 keyword arguments
+parrot(action='VOOOOOM', voltage=1000000)             # 2 keyword arguments
+parrot('a million', 'bereft of life', 'jump')         # 3 positional arguments
+parrot('a thousand', state='pushing up the daisies')  # 1 positional, 1 keyword
+
+Et ces façons là sont invalides;
+
+parrot()                     # required argument missing
+parrot(voltage=5.0, 'dead')  # non-keyword argument after a keyword argument
+parrot(110, voltage=220)     # duplicate value for the same argument
+parrot(actor='John Cleese')  # unknown keyword argument
+
+Dans un appel de fonction, les arguments mot-clés 'keyword arguments' doivent toujours suivre les arguments positionnels.
+Tous les arguments mot-clés donnés doivent coller à l'un des arguments acceptés par la fonction. Leur ordre n'est pas important.
+Un argument ne peux reçevoir une valeur plus d'une fois.
+
+Quand on ajoute un paramètre de la forme **name à la définition d'une fonction, name est un dictionnaire contenant tous
+les arguments mot-clés de la fonction, sauf ceux explicitement déclarés.
+On peut aussi en utiliser un de la forme *name qui lui contiendra tous les arguments positionnels de la fonction,
+sauf ceux explicitement déclarés.
+
+La fonction;
+
+def cheeseshop(kind, *arguments, **keywords):
+    print("-- Do you have any", kind, "?")
+    print("-- I'm sorry, we're all out of", kind)
+    for arg in arguments:
+        print(arg)
+    print("-" * 40)
+    for kw in keywords:
+        print(kw, ":", keywords[kw])
+
+Appellée via;
+
+cheeseshop("Limburger", "It's very runny, sir.",
+           "It's really very, VERY runny, sir.",
+           shopkeeper="Michael Palin",
+           client="John Cleese",
+           sketch="Cheese Shop Sketch")
+
+Donnera donc;
+
+-- Do you have any Limburger ?
+-- I'm sorry, we're all out of Limburger
+It's very runny, sir.
+It's really very, VERY runny, sir.
+----------------------------------------
+shopkeeper : Michael Palin
+client : John Cleese
+sketch : Cheese Shop Sketch
+

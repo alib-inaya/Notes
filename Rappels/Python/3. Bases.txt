@@ -1,0 +1,363 @@
+Commentaire Python = préfixé de #. Pas pris en compte au sein de littéraux de chaînes de caractères. 
+(Littéral = représentation textuelle (notation) d'une valeur telle qu'écrite dans le code source)
+Exemple:
+
+# this is the first comment
+spam = 1  # and this is the second comment
+          # ... and now a third!
+text = "# This is not a comment because it's inside quotes."
+
+-- Python pour des calculs --
+
+Peut exécuter des calculs, avec op. arithm. de base + - * /, parenthèses (), division 'floor' donnant un entier //, puissance **
+Les entiers sont de type int, les chiffres à virgule float.
+Division / retourne tjrs float. 'floor division' // retourne entier et se débarasse de la partie fractionelle.
+Peut aussi employer modulo %. Modulo peut retourner un int ou un float selon le résultat.
+
+>>> 17 / 3  # classic division returns a float
+5.666666666666667
+>>> 17 // 3  # floor division discards the fractional part
+5
+>>> 17 % 3  # the % operator returns the remainder of the division
+2
+>>> 5 * 3 + 2  # floored quotient * divisor + remainder
+17
+
+Peut assigner variable avec =
+
+>>> width = 20
+>>> height = 5 * 9
+>>> width * height
+900
+
+Si variable pas définie, tenter de l'util. donne une erreur:
+
+>>> n  # try to access an undefined variable
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+NameError: name 'n' is not defined
+
+En mode interactif, dernière expression affichée est placée dans la variable magique _
+Exemple:
+
+>>> tax = 12.5 / 100
+>>> price = 100.50
+>>> price * tax
+12.5625
+>>> price + _
+113.0625
+>>> round(_, 2)
+113.06
+
+Doit traiter cette variable comme read-only, ne rien lui assigner, sinon une variable indépendante locale est crée
+qui masquera la variable magique _.
+
+Python supporte d'autres types que int et float, comme Decimal et Fraction. Python gère même les nombres complexes, avec un suffixe
+j ou J pour indique la partie imaginaire, ex: 3+5j
+
+-- Le texte --
+
+Python gère le texte, de type str. Peut l'entourer de guillemets simples '' ou doubles "".
+Pour mettre un guillemet dans une chaîne de caractère, on doit le fuir en le précédant de \, ou alors
+on utilise l'autre type de guillement pour citer la chaîne de caractères.
+
+>>> 'doesn\'t'  # use \' to escape the single quote...
+"doesn't"
+>>> "doesn't"  # ...or use double quotes instead
+"doesn't"
+>>> '"Yes," they said.'
+'"Yes," they said.'
+>>> "\"Yes,\" they said."
+'"Yes," they said.'
+>>> '"Isn\'t," they said.'
+'"Isn\'t," they said.'
+
+La fonction print() affiche de façon plus lisible les chaînes, en traitant les caractères spéciaux
+et en omettant les guillemets entourants la chaîne:
+
+>>> s = 'First line.\nSecond line.'  # \n means newline
+>>> s  # without print(), special characters are included in the string
+'First line.\nSecond line.'
+>>> print(s)  # with print(), special characters are interpreted, so \n produces new line
+First line.
+Second line.
+
+Si on ne souhaite pas que les caractères spéciaux soient traités (ignorer le fait que des caractères soient précédés de \), on
+utilise des chaînes brutes 'raw strings', en précédant leur citation de la lettre r:
+
+>>> print('C:\some\name')  # here \n means newline!
+C:\some
+ame
+>>> print(r'C:\some\name')  # note the r before the quote
+C:\some\name
+
+[!] Les chaînes brutes ne doivent pas terminer par \ et avoir au total une q.tité impaire de \ en leur sein.
+Peut utiliser la concaténation, ou utilise une chaîne qui n'est pas brute, ou encore os.path.join() pour contourner le problème.
+Voir: https://docs.python.org/3/faq/programming.html#faq-programming-raw-string-backslash
+
+Peut aussi citer une chaîne multi-lignes avec en triplant les guillements: """...""" ou '''...'''
+Dans ces types de chaînes, les fins de lignes = autom. ajoutés à la chaîne, mais peut empêcher ce comportement en ajoutant \
+à la fin de la ligne concernée.
+
+>>> print("""\
+... Usage: thingy [OPTIONS]
+...      -h                        Display this usage message
+...      -H hostname               Hostname to connect to
+... """)
+Usage: thingy [OPTIONS]
+     -h                        Display this usage message
+     -H hostname               Hostname to connect to
+
+>>> 
+
+Peut concatener chaînes avec +, peut aussi les multiplier avec *, exemple:
+
+>>> # 3 times 'un', followed by 'ium'
+>>> 3 * 'un' + 'ium'
+'unununium'
+
+Deux littéraux mis l'un à l'autre sont concatenés automatiquement:
+
+>>> 'Py' 'thon'
+'Python'
+
+Fonctionne seulement avec des littéraux, pas des variables ou expressions:
+
+>>> prefix = 'Py'
+>>> prefix 'thon'  # can't concatenate a variable and a string literal
+  File "<stdin>", line 1
+    prefix 'thon'
+           ^^^^^^
+SyntaxError: invalid syntax
+
+>>> ('un' * 3) 'ium'
+  File "<stdin>", line 1
+    ('un' * 3) 'ium'
+               ^^^^^
+SyntaxError: invalid syntax
+
+Peut concatener variables & littéral, mais avec l'opérateur +.
+
+>>> prefix + 'thon'
+'Python'
+
+On peut indexer les chaînes de caractères, le premier caractère est à l'index 0.
+Il n'existe pas de type de caractère par défaut en Python, le caractère obtenu par indexation n'est qu'une chaîne (type str) de taille 1.
+
+>>> word = 'Python'
+>>> word[0]  # character in position 0
+'P'
+>>> word[5]  # character in position 5
+'n'
+
+Les index négatifs sont également gérés, -0 revient à faire 0. -1 est le dernier caractère de la chaîne, -2 le second dernier, ainsi de suite.
+
+>>> word[-1]  # last character
+'n'
+>>> word[-2]  # second-last character
+'o'
+>>> word[-6]
+'P'
+
+Peut aussi découper 'slice' des chaînes de caractères avec la syntaxe:
+chaineDeCaractère[<début>:<fin>]
+Ceci donne la chaîne de l'index <début> inclusif jusqu'à l'index <fin> exclusif.
+Si le premier est omit, il sera remplacé par 0. Si le second est omit, par la taille de la chaîne concernée.
+
+>>> word[0:2]  # characters from position 0 (included) to 2 (excluded)
+'Py'
+>>> word[2:5]  # characters from position 2 (included) to 5 (excluded)
+'tho'
+
+>>> word[:2]   # character from the beginning to position 2 (excluded)
+'Py'
+>>> word[4:]   # characters from position 4 (included) to the end
+'on'
+>>> word[-2:]  # characters from the second-last (included) to the end
+'on'
+
+Pour les index non-négatifs, la taille d'une découpe est la différence des index. Par exemple, la taille de word[1:3] est 2.
+
+Tenter d'accéder à un index trop grand d'une chaîne donne une erreur:
+
+>>> word[42]  # the word only has 6 characters
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+IndexError: string index out of range
+
+Cependant, les index hors de portée sont gérés automatiquement lors de découpages:
+
+>>> word[4:42]
+'on'
+>>> word[42:]
+''
+
+Les chaînes de caractères en Python ne peuvent pas être modifiées, elles sont immuables 'immutable'.
+
+>>> word[0] = 'J'
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: 'str' object does not support item assignment
+
+>>> word[2:] = 'py'
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: 'str' object does not support item assignment
+
+Immuable = objet avec valeur fixe. Doit créer un nouvel objet si valeur diff. doit être stockée. Jouent un rôle important
+dans les endroits ou une valeur de hash constante est requise, comme la clé d'un dictionnaire.
+
+Si besoin d'une nouvelle chaîne de caractères, on en crée une autre.
+
+>>> 'J' + word[1:]
+'Jython'
+>>> word[:2] + 'py'
+'Pypy'
+
+La fonction Python incluse 'len()', retourne la longueur d'une chaîne:
+
+>>> s = 'supercalifragilisticexpialidocious'
+>>> len(s)
+34
+
+-- Les listes --
+
+Pythons inclu une quantité de types de données dits composés 'compound data types', utilisés pour regrouper ensemble des valeurs.
+Le plus versatile est le type list, pouvant être écrit comme des valeurs séparées par des virgules, toutes entre des crochets.
+Ce type de donnée peut contenir des valeurs de différents types, mais en général ils sont de mêmes types.
+
+>>> squares = [1, 4, 9, 16, 25]
+>>> squares
+[1, 4, 9, 16, 25]
+
+Listes peuvent aussi être indéxées, découpées & concatenées, comme les chaînes:
+
+>>> squares[0]  # indexing returns the item
+1
+>>> squares[-1]
+25
+>>> squares[-3:]  # slicing returns a new list
+[9, 16, 25]
+>>> squares + [36, 49, 64, 81, 100]
+[1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+
+Listes = muables 'mutable'; on peut changer leur contenu
+
+>>> cubes = [1, 8, 27, 65, 125]  # something's wrong here
+>>> 4 ** 3  # the cube of 4 is 64, not 65!
+64
+>>> cubes[3] = 64  # replace the wrong value
+>>> cubes
+[1, 8, 27, 64, 125]
+
+Peut aussi utiliser la méthode list.append() pour ajouter une valeur à la fin d'une liste:
+
+>>> cubes.append(216)  # add the cube of 6
+>>> cubes.append(7 ** 3)  # and the cube of 7
+>>> cubes
+[1, 8, 27, 64, 125, 216, 343]
+
+Assignation en Python = ne copie jamais les données.
+Quand on assigne une liste a une var., la var. fait reference à la liste existante.
+Des changements sur la liste à travers une varaible seront visibles sur toutes les autres variables y faisant référence.
+
+>>> rgb = ["Red", "Green", "Blue"]
+>>> rgba = rgb
+>>> id(rgb) == id(rgba)  # they reference the same object
+True
+>>> rgba.append("Alph")
+>>> rgb
+["Red", "Green", "Blue", "Alph"]
+
+Tous les découpages retournent une nouvelle liste des éléments demandés. Signifie que la découpe suivant retourne une copie
+superficielle 'shallow copy' de la liste:
+
+>>> correct_rgba = rgba[:]
+>>> correct_rgba[-1] = "Alpha"
+>>> correct_rgba
+["Red", "Green", "Blue", "Alpha"]
+>>> rgba
+["Red", "Green", "Blue", "Alph"]
+
+Shallow copy: Le fait de copier un objet, mais en récupérant les références des objets qui le constituent.
+Deep copy: Le fait de copier un objet, et récursivement aussi copier les objets qui le constituent.
+
+Il est possible d'assigner à des découpes. Ceci peut altérer la liste, supprimer tout son contenu, ou une partie.
+
+>>> letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+>>> letters
+['a', 'b', 'c', 'd', 'e', 'f', 'g']
+>>> # replace some values
+>>> letters[2:5] = ['C', 'D', 'E']
+>>> letters
+['a', 'b', 'C', 'D', 'E', 'f', 'g']
+>>> # now remove them
+>>> letters[2:5] = []
+>>> letters
+['a', 'b', 'f', 'g']
+>>> # clear the list by replacing all the elements with an empty list
+>>> letters[:] = []
+>>> letters
+[]
+
+La fonction len() s'applique aussi aux listes:
+
+>>> letters = ['a', 'b', 'c', 'd']
+>>> len(letters)
+4
+
+On peut imbriquer des listes:
+
+>>> a = ['a', 'b', 'c']
+>>> n = [1, 2, 3]
+>>> x = [a, n]
+>>> x
+[['a', 'b', 'c'], [1, 2, 3]]
+>>> x[0]
+['a', 'b', 'c']
+>>> x[0][1]
+'b'
+
+-- Premiers pas vers la programmation --
+
+Implémentation d'une sous-séquence de la suite de Fibonacci:
+
+>>> # Fibonacci series:
+>>> # the sum of two elements defines the next
+>>> a, b = 0, 1
+>>> while a < 10:
+...     print(a)
+...     a, b = b, a+b
+... 
+0
+1
+1
+2
+3
+5
+8
+
+Fonctionnalités utilisées:
+	- Assignations multiples (var. a et b reçoivent en même temps 0 et 1. Les expressions à droite sont évaluées avant
+que les assignations aient lieu)
+	- Boucle while, exéc. tant que la condition a < 10 est vraie. En Python comme en C, tout entier non nul est vrai, 0 faux.
+Les séquences vides sont évaluées fausses, sinon vraies.
+Opérateurs de comparaison en Python = comme en C, <, >, ==, <=, >=.
+	- Corps de la boucle = indentée. Façon Python de regrouper des déclarations 'statements'. Chaque ligne dans un block basique
+'basic block' doit être indentée de la même quantité que les autres.
+	- La fonction print() affiche les valeurs des arguments donnés. Gère diff. l'affich. des arguments donnés, float, strings ...
+
+>>> i = 256*256
+>>> print('The value of i is', i)
+The value of i is 65536
+
+Peut lui passer l'argument end pour éviter le retour à la ligne après l'affichage, ou terminer l'affichage d'une chaîne
+différente:
+
+>>> a, b = 0, 1
+>>> while a < 1000:
+...     print(a, end=',')
+...     a, b = b, a+b
+... 
+0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,
+
