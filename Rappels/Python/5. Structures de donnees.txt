@@ -1,0 +1,4 @@
+Méthodes des listes:
+
+list.append(x) Ajoute un élément à la fin de la liste. Revient à faire a[len(a):] = [x]
+list.extend(iterable) Ajoute les éléments de l'iterable à la liste. Equiv. a[len(a):] = iterable

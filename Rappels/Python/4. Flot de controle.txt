@@ -219,8 +219,10 @@ match point:
 Je lui passe un point (x, y). Si il vaut l'origine, il m'affiche l'origine.
 Dans les cas x = 0, il affiche la coordonnée y du point.
 Dans les cas y = 0, il affiche la coordonnée x du point.
-Dans tous les cas, il affiche les coordonnées du point x et y.
-Les quatrième pattern capture deux variables, ce qui le rend similaire à l'assignement déstructurateur 'unpacking assignment)
+Dans tous les cas ou ni x ni y valent 0, il affiche les coordonnées du point x et y.
+Autrement, il lance une erreur.
+
+Les quatrième pattern capture deux variables, ce qui le rend similaire à l'assignement déstructurateur 'unpacking assignment'
 (x, y) = point
 
 Si utilise classes pour structurer nos données, peut utiliser le nom de la classe suivi par une liste d'arguments
@@ -500,3 +502,162 @@ shopkeeper : Michael Palin
 client : John Cleese
 sketch : Cheese Shop Sketch
 
+L'ordre de leur affichage coïncide avec celui dans lequel les arguments ont été donnés.
+
+-- Paramètres spéciaux --
+
+Peut spécifier si les arguments de ma fonction sont positionnels ou mot-clés seulement avec les
+paramètres spéciaux / et *, voir ce format;
+
+def f(pos1, pos2, /, pos_or_kwd, *, kwd1, kwd2):
+      -----------    ----------     ----------
+        |             |                  |
+        |        Positional or keyword   |
+        |                                - Keyword only
+         -- Positional only
+
+
+Exemple;
+
+def f(pos1, pos2, /, pos_or_kwd, *, kwd1, kwd2):
+
+Les arguments 'pos' sont que positionnels. 'pos_or_kwd' peux être soit positionnel;
+
+f(x, y, z, ...)
+
+Soit à mot-clé;
+
+f(x, y, pos_or_kwd=..., ...)
+
+Les arguments 'kwd' ne sont qu'à mot-clés.
+
+Conseil; pour les API n'utiliser que positionnels si on veut éviter que les changements d'API cassent tout en
+changent les noms de variables.
+
+-- Liste d'arguments arbitraire --
+
+Peut spécifier qu'une fonction peut être appellée avec une quantité arbitraire d'args
+Ces args = placés dans un tuple
+Exemple;
+
+def write_multiple_items(file, separator, *args):
+    file.write(separator.join(args))
+
+Ces arguments dits variadiques 'variadic' viennent en dernier dans la liste des paramètres formels, parcequ'ils
+prennent tous les arguments d'entrées restants passés à une fonction
+Tout paramètre formel venant après *args est un paramètre qui doit être à mot-clé 'keyword'
+
+-- Le déballage de liste d'arguments 'Unpacking argument lists' --
+
+Quand on a une liste ou un tuple, on peut la déballer pour placer ses arguments dans un appel de fonction
+qui aurait besoin d'arguments positionnels.
+Exemple avec range(), qui a besoin d'arguments 'début' et 'fin' séparés. On déballe notre tuple contenant
+ces arguments avec l'opérateur *
+
+>>> list(range(3, 6))            # normal call with separate arguments
+[3, 4, 5]
+>>> args = [3, 6]
+>>> list(range(*args))            # call with arguments unpacked from a list
+[3, 4, 5]
+
+Les dictionnaires peuvent donner des arguments mot-clés de la même façon mais avec l'opérateur **
+
+>>> def parrot(voltage, state='a stiff', action='voom'):
+...     print("-- This parrot wouldn't", action, end=' ')
+...     print("if you put", voltage, "volts through it.", end=' ')
+...     print("E's", state, "!")
+... 
+>>> d = {"voltage": "four million", "state": "bleedin' demised", "action": "VOOM"}
+>>> parrot(**d)
+-- This parrot wouldn't VOOM if you put four million volts through it. E's bleedin' demised 
+
+-- Les expressions lambda --
+
+Peut créer de petites fonctions anonymes avec le mot-clé lambda.
+Fonctions lambda = semantiquement juste du sucre syntactique pour une définition de fonction normale.
+Définition de fonction lambda peuvent faire ref. à des variables du scope qui les contient.
+
+>>> def make_incrementor(n):
+...     return lambda x: x + n
+... 
+>>> f = make_incrementor(42)
+>>> f(0)
+42
+>>> f(1)
+43
+
+Autre exemple; on peut passer les fonctions lambda comme arguments.
+
+>>> pairs = [(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four')]
+>>> pairs.sort(key=lambda pair: pair[1])
+>>> pairs
+[(4, 'four'), (1, 'one'), (3, 'three'), (2, 'two')]
+
+-- Documentation strings --
+
+Conventions sur les 'documentation strings':
+
+	- Première ligne = sommaire court sur le but de l'objet en question, devrait pas citer nom ou type car dispos ailleurs,
+pour être bref. Doit commencer par majuscule, finir par un point.
+	- Si plusieurs lignes, la seconde doit être vide pour séparer le sommaire du reste. Lignes suivantes doivent être
+paragraphes décrivant les conventions d'appels de l'objet, ses effets de bords, ...
+	- Parser = n'enlève pas l'indentation de littéraux de chaînes multi-lignes, donc outils qui traitent la
+documentation doivent gérer ça, avec la convention suivante;
+La première ligne non-vide après la première ligne détermine l'indentation pour toute la chaîne de doc.
+L'équivalent en espaces de cette indentation = ensuite enlevée du début de toutes les lignes de la chaîne.
+Lignes moins indentées = devrait pas y être, mais si elles y sont alors leurs espacement au début doit être enlevé.
+Equivalence des espaces doit être testée après expansion des tabulations (1 tab = 8 espaces normalement)
+
+Ex;
+
+>>> def my_function():
+...     """Do nothing, but document it.
+... 
+...     No, really, it doesn't do anything.
+...     """
+...     pass
+... 
+>>> print(my_function.__doc__)
+Do nothing, but document it.
+
+    No, really, it doesn't do anything.
+
+-- Annotations de fonctions --
+
+Annotation de fonction = métadonnée optionelle sur les type utilisés par les fonctions définies par l'utilisateur
+Elles sont stockés dans l'attribu __annotations__ de la fonction comme dictionnaire & n'ont aucun effet sur les autres
+parties de la fonction.
+
+Annotations de paramètres = définies par un double point : après le nom du paramètre, suivi de l'expression évaluant à la
+valeur de l'annotation.
+
+Annotations de retour = définies par un littéral -> suivi par une expression entre la liste des paramètres et le : dénotant
+la fin de la définition de la fonction. Exemple;
+
+>>> def f(ham: str, eggs: str = 'eggs') -> str:
+...     print("Annotations:", f.__annotations__)
+...     print("Arguments:", ham, eggs)
+...     return ham + ' and ' + eggs
+... 
+>>> f('spam')
+Annotations: {'ham': <class 'str'>, 'return': <class 'str'>, 'eggs': <class 'str'>}
+Arguments: spam eggs
+'spam and eggs'
+
+-- Style de programmation Intermezzo --
+
+Style de programmation de la pluspart des projets Python: le PEP 8
+Ses conventions:
+	- Identation à 4 espaces, pas de tabluations
+	- Couper les lignes pour qu'elles n'excedent pas 79 caractères
+	- Lignes vides pour séparer fonctions & classes & blocks de code plus large au sein des fonctions
+	- Mettre les commentaires sur leurs propres lignes quand possible
+	- Utiliser les docstrings
+	- Espaces autour des opérateur & après les virgules mais pas directement dans constructions à parenthèses
+a = f(1, 2) + g(3, 4)
+	- Nommer nos classes & fonctions de façon consistante. Convention = UpperCamelCase pour classes et 
+lowercase_with_underscores pour fonctions & méthodes. Toujours utiliser self comme nom pour le premier argument de méthode
+	- Pas d'encodages exotiques si le code est fait pour environement internationaux
+Celui par défaut de Python (UTF-8) ou même ASCII fonctionne bien dans la pluspart des cas
+	- Pas de caractères non-ASCII dans les identificateurs si chances que des personnes parlant un langage diff.
+vont maintenir ou lire le code
